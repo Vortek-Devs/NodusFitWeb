@@ -1,4 +1,4 @@
-import Link from "next/link";
+import { PublicShell } from "@/components/public/public-shell";
 
 const features = [
   {
@@ -19,36 +19,8 @@ const steps = ["Crie o aluno", "Monte o treino", "Acompanhe a evolucao"];
 
 export default function Home() {
   return (
-    <main className="min-h-screen overflow-hidden bg-hero-dark text-ink-primary">
-      <nav className="mx-auto flex w-full max-w-7xl items-center justify-between px-5 py-5 sm:px-8">
-        <Link className="flex items-center gap-3" href="/" aria-label="Nodus Fit">
-          <span className="grid size-10 place-items-center rounded-2xl bg-gradient-to-br from-brand-400 to-brand-700 text-sm font-extrabold text-on-brand shadow-brand">
-            NF
-          </span>
-          <span className="text-lg font-extrabold tracking-normal text-brand-50">
-            NODUS <span className="text-brand-400">FIT</span>
-          </span>
-        </Link>
-        <div className="hidden items-center gap-7 text-sm font-semibold text-ink-tertiary md:flex">
-          <a className="transition hover:text-brand-400" href="#produto">
-            Produto
-          </a>
-          <a className="transition hover:text-brand-400" href="#fluxo">
-            Como funciona
-          </a>
-          <a className="transition hover:text-brand-400" href="#precos">
-            Precos
-          </a>
-        </div>
-        <a
-          className="rounded-pill border border-brand-400/35 px-4 py-2 text-sm font-bold text-brand-400 transition hover:bg-brand-400 hover:text-on-brand"
-          href="#precos"
-        >
-          Comecar
-        </a>
-      </nav>
-
-      <section className="mx-auto grid min-h-[calc(100vh-80px)] w-full max-w-7xl items-center gap-12 px-5 pb-16 pt-8 sm:px-8 lg:grid-cols-[1fr_0.92fr] lg:pb-20">
+    <PublicShell>
+      <section className="mx-auto grid min-h-[calc(100vh-var(--spacing-nav))] w-full max-w-7xl items-center gap-12 px-5 pb-16 pt-8 sm:px-8 lg:grid-cols-[1fr_0.92fr] lg:pb-20">
         <div className="max-w-3xl">
           <div className="mb-5 inline-flex items-center gap-2 rounded-pill border border-brand-400/25 bg-brand-400/10 px-3 py-1.5 text-xs font-bold uppercase tracking-[0.12em] text-brand-300">
             Para personal trainers autonomos
@@ -250,6 +222,6 @@ export default function Home() {
           </div>
         </div>
       </section>
-    </main>
+    </PublicShell>
   );
 }
