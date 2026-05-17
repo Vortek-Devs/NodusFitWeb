@@ -27,7 +27,7 @@ export function PublicHeader() {
           ))}
         </nav>
         <Link
-          className="inline-flex min-h-10 items-center justify-center rounded-pill border border-brand-400/35 px-4 text-sm font-bold text-brand-400 transition hover:bg-brand-400 hover:text-on-brand"
+          className="hidden min-h-10 items-center justify-center rounded-pill border border-brand-400/35 px-4 text-sm font-bold text-brand-400 transition hover:bg-brand-400 hover:text-on-brand sm:inline-flex"
           href="/#precos"
         >
           Comecar
