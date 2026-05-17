@@ -55,14 +55,12 @@ export default function Home() {
           </div>
           <h1 className="text-5xl font-extrabold leading-[1.02] text-brand-50 sm:text-6xl lg:text-7xl">
             Gerencie seus alunos.
-            <span className="block text-gradient-brand">
-              Simplifique seu treino.
-            </span>
+            <span className="block text-gradient-brand">Simplifique seu treino.</span>
           </h1>
           <p className="mt-6 max-w-2xl text-lg font-medium leading-8 text-ink-secondary">
-            O app que o personal assina e o aluno ama usar. Treinos, evolucao,
-            agenda e financeiro em um lugar so, com a base visual oficial do
-            Nodus Fit desde o primeiro commit.
+            O app que o personal assina e o aluno ama usar. Treinos, evolucao, agenda e
+            financeiro em um lugar so, com a base visual oficial do Nodus Fit desde o
+            primeiro commit.
           </p>
           <div className="mt-8 flex flex-col gap-3 sm:flex-row">
             <a
@@ -90,13 +88,13 @@ export default function Home() {
               ))}
             </div>
             <span>
-              <strong className="text-brand-50">+200 personais</strong> no beta
-              privado
+              <strong className="text-brand-50">+200 personais</strong> no beta privado
             </span>
           </div>
         </div>
 
         <div
+          role="img"
           aria-label="Previa visual do produto Nodus Fit"
           className="relative mx-auto w-full max-w-[560px]"
         >
@@ -136,9 +134,7 @@ export default function Home() {
                   >
                     <div>
                       <div className="font-bold text-brand-50">{name}</div>
-                      <div className="mt-1 text-sm text-ink-tertiary">
-                        {sets}
-                      </div>
+                      <div className="mt-1 text-sm text-ink-tertiary">{sets}</div>
                     </div>
                     <span className="rounded-pill bg-success-bg px-3 py-1 text-xs font-bold text-success-text">
                       {status}
@@ -152,9 +148,7 @@ export default function Home() {
               <div className="text-xs font-bold uppercase tracking-[0.12em] text-ink-tertiary">
                 Descanso
               </div>
-              <div className="mt-2 text-4xl font-extrabold text-brand-400">
-                1:30
-              </div>
+              <div className="mt-2 text-4xl font-extrabold text-brand-400">1:30</div>
               <div className="mt-3 flex gap-2 text-xs font-bold text-ink-secondary">
                 <span className="rounded-pill bg-hover px-2 py-1">Pular</span>
                 <span className="rounded-pill bg-hover px-2 py-1">+30s</span>
@@ -184,9 +178,7 @@ export default function Home() {
                 key={feature.title}
               >
                 <div className="mb-5 h-1.5 w-12 rounded-sm bg-brand-400" />
-                <h3 className="text-xl font-extrabold text-brand-50">
-                  {feature.title}
-                </h3>
+                <h3 className="text-xl font-extrabold text-brand-50">{feature.title}</h3>
                 <p className="mt-3 text-base font-medium text-ink-secondary">
                   {feature.body}
                 </p>
@@ -230,8 +222,8 @@ export default function Home() {
               O personal paga. O aluno usa de graca.
             </h2>
             <p className="mt-4 max-w-xl text-lg font-medium text-ink-secondary">
-              Modelo simples para validar rapido: comece leve, evolua para Pro
-              quando a operacao pedir mais controle.
+              Modelo simples para validar rapido: comece leve, evolua para Pro quando a
+              operacao pedir mais controle.
             </p>
           </div>
           <div className="rounded-2xl border border-brand-400/25 bg-surface p-5 shadow-brand">
@@ -240,9 +232,7 @@ export default function Home() {
                 <div className="text-sm font-bold uppercase tracking-[0.12em] text-brand-400">
                   Plano Pro
                 </div>
-                <div className="mt-3 text-5xl font-extrabold text-brand-50">
-                  R$49
-                </div>
+                <div className="mt-3 text-5xl font-extrabold text-brand-50">R$49</div>
                 <div className="mt-1 text-sm font-medium text-ink-tertiary">
                   por mes, por personal
                 </div>
