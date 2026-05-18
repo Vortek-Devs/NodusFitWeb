@@ -29,7 +29,7 @@ export function PublicPageShell({
           <p className="mt-5 text-lg font-medium leading-8 text-ink-secondary">
             {description}
           </p>
-          <div className="mt-10 space-y-6 text-base font-medium leading-7 text-ink-secondary">
+          <div className="mt-10 space-y-8 text-base font-medium leading-7 text-ink-secondary [&_a]:font-bold [&_a]:text-brand-400 [&_a]:underline-offset-4 [&_a:hover]:underline [&_h2]:text-2xl [&_h2]:font-extrabold [&_h2]:text-brand-50 [&_li]:pl-1 [&_ul]:list-disc [&_ul]:space-y-2 [&_ul]:pl-5">
             {children}
           </div>
         </div>
