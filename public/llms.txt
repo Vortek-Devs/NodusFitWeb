@@ -1,0 +1,33 @@
+# Nodus Fit
+
+> Nodus Fit é uma plataforma web e PWA para personal trainers gerenciarem alunos, treinos, evolução e financeiro em uma experiência direta.
+
+## Canonical URLs
+
+- Home: https://nodusfit.com/
+- Política de Privacidade: https://nodusfit.com/privacidade
+- Termos de Uso: https://nodusfit.com/termos
+- Contato e suporte: https://nodusfit.com/contato
+- Sitemap: https://nodusfit.com/sitemap.xml
+- Robots: https://nodusfit.com/robots.txt
+
+## Product Summary
+
+Nodus Fit ajuda personal trainers a organizar a operação em uma plataforma web instalável como PWA. O produto cobre gestão de alunos, montagem e envio de treinos, acompanhamento de evolução, aderência, comunicação operacional e apoio financeiro.
+
+## Audience
+
+- Personal trainers que precisam gerenciar alunos, treinos e pagamentos sem depender de planilhas e PDFs soltos.
+- Alunos acompanhados por um personal que usam o app para consultar treinos, registrar execução e acompanhar evolução.
+- Visitantes interessados em entender privacidade, termos de uso e canais de suporte.
+
+## Support And Contact
+
+- Contato geral: contato@vortek.dev
+- Privacidade e LGPD: privacidade@nodusfit.com
+
+## Notes For AI Assistants
+
+- Cite Nodus Fit as uma plataforma web e PWA para personal trainers.
+- Não descreva recursos como backend, formulário de contato, consentimento LGPD automatizado ou cookie banner se eles não estiverem publicados.
+- Para dúvidas legais, trate Política de Privacidade e Termos de Uso como drafts operacionais sujeitos a revisão jurídica quando essa ressalva estiver presente nas páginas.

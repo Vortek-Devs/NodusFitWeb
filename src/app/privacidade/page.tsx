@@ -1,11 +1,13 @@
 import type { Metadata } from "next";
 import { PublicPageShell } from "@/components/public/public-page-shell";
+import { createPublicPageMetadata } from "@/lib/seo";
 
-export const metadata: Metadata = {
+export const metadata: Metadata = createPublicPageMetadata({
   title: "Política de Privacidade | Nodus Fit",
   description:
     "Entenda como o Nodus Fit coleta, usa e protege dados pessoais de visitantes, personal trainers e alunos.",
-};
+  path: "/privacidade",
+});
 
 const privacyEmail = "privacidade@nodusfit.com";
 

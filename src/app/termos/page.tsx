@@ -1,11 +1,13 @@
 import type { Metadata } from "next";
 import { PublicPageShell } from "@/components/public/public-page-shell";
+import { createPublicPageMetadata } from "@/lib/seo";
 
-export const metadata: Metadata = {
+export const metadata: Metadata = createPublicPageMetadata({
   title: "Termos de Uso | Nodus Fit",
   description:
     "Conheça as regras de uso, responsabilidades, assinatura, cancelamento e limitações do Nodus Fit.",
-};
+  path: "/termos",
+});
 
 const contactEmail = "contato@vortek.dev";
 
