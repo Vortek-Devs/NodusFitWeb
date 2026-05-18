@@ -1,5 +1,6 @@
 import type { Metadata, Viewport } from "next";
 import { Geist_Mono, Syne } from "next/font/google";
+import { ServiceWorkerRegistration } from "@/components/pwa/service-worker-registration";
 import { absoluteUrl, createJsonLd, serializeJsonLd, siteConfig } from "@/lib/seo";
 import "./globals.css";
 
@@ -83,6 +84,7 @@ export default function RootLayout({
     >
       <body className="min-h-full">
         <script type="application/ld+json">{jsonLd}</script>
+        <ServiceWorkerRegistration />
         {children}
       </body>
     </html>
