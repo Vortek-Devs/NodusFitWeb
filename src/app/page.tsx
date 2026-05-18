@@ -16,10 +16,19 @@ import {
   IconUser,
   IconX,
 } from "@tabler/icons-react";
+import type { Metadata } from "next";
 import Link from "next/link";
 import { LandingV3Motion } from "@/components/landing/landing-v3-motion";
+import { createPublicPageMetadata } from "@/lib/seo";
 
 const mailTo = "mailto:contato@vortek.dev?subject=Beta%20Nodus%20Fit";
+
+export const metadata: Metadata = createPublicPageMetadata({
+  title: "Nodus Fit | Gestão de alunos, treinos e financeiro para personal trainers",
+  description:
+    "Organize alunos, treinos, evolução e financeiro em uma plataforma web e PWA feita para personal trainers.",
+  path: "",
+});
 
 const features = [
   {
