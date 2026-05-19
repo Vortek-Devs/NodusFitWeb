@@ -113,7 +113,7 @@
   --color-info-text: var(--color-info-text);
   --color-info: var(--color-info);
 
-  --font-sans: var(--font-syne), system-ui, sans-serif;
+  --font-sans: var(--font-manrope), system-ui, sans-serif;
   --font-mono: var(--font-geist-mono), "JetBrains Mono", monospace;
 
   --text-xs: 11px;
@@ -166,7 +166,7 @@ body {
   min-height: 100%;
   background: var(--background);
   color: var(--foreground);
-  font-family: var(--font-syne), system-ui, sans-serif;
+  font-family: var(--font-manrope), system-ui, sans-serif;
 }
 
 button,
@@ -236,8 +236,8 @@ select {
   overflow: hidden;
   background: var(--bg);
   color: var(--t1);
-  font-family: var(--font-syne), system-ui, sans-serif;
-  line-height: 1;
+  font-family: var(--font-manrope), system-ui, sans-serif;
+  line-height: 1.28;
 }
 
 .landing-v3,
@@ -428,7 +428,7 @@ select {
   font-size: 40px;
   font-weight: 800;
   letter-spacing: -0.03em;
-  line-height: 1.05;
+  line-height: 1.08;
 }
 
 .landing-v3 .sh-title.dk {
@@ -616,7 +616,7 @@ select {
   font-size: 72px;
   font-weight: 800;
   letter-spacing: -0.05em;
-  line-height: 0.98;
+  line-height: 1.08;
 }
 
 .landing-v3 .hero-sub {
@@ -802,6 +802,7 @@ select {
 
 .landing-v3 .phd-b {
   color: var(--t1);
+  font-family: var(--font-syne), system-ui, sans-serif;
   font-size: 9.5px;
   font-weight: 800;
 }
@@ -1415,7 +1416,7 @@ select {
   font-size: 48px;
   font-weight: 800;
   letter-spacing: -0.04em;
-  line-height: 1.02;
+  line-height: 1.08;
 }
 
 .landing-v3 .spotlight-b {
@@ -1781,7 +1782,7 @@ select {
   font-style: italic;
   font-weight: 800;
   letter-spacing: -0.025em;
-  line-height: 1.13;
+  line-height: 1.18;
 }
 
 .landing-v3 .pq-text em {
@@ -2146,7 +2147,7 @@ select {
   font-size: 60px;
   font-weight: 800;
   letter-spacing: -0.05em;
-  line-height: 1;
+  line-height: 1.08;
 }
 
 .landing-v3 .cta-h em {
@@ -2194,6 +2195,7 @@ select {
 
 .landing-v3 .ft-brand {
   color: var(--t1);
+  font-family: var(--font-syne), system-ui, sans-serif;
   font-size: 14px;
   font-weight: 800;
 }

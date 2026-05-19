@@ -1,11 +1,17 @@
 import type { Metadata, Viewport } from "next";
-import { Geist_Mono, Syne } from "next/font/google";
+import { Geist_Mono, Manrope, Syne } from "next/font/google";
 import { ServiceWorkerRegistration } from "@/components/pwa/service-worker-registration";
 import { absoluteUrl, createJsonLd, serializeJsonLd, siteConfig } from "@/lib/seo";
 import "./globals.css";
 
 const syne = Syne({
   variable: "--font-syne",
+  subsets: ["latin"],
+  weight: ["400", "500", "600", "700", "800"],
+});
+
+const manrope = Manrope({
+  variable: "--font-manrope",
   subsets: ["latin"],
   weight: ["400", "500", "600", "700", "800"],
 });
@@ -80,7 +86,7 @@ export default function RootLayout({
   return (
     <html
       lang="pt-BR"
-      className={`${syne.variable} ${geistMono.variable} dark h-full antialiased`}
+      className={`${syne.variable} ${manrope.variable} ${geistMono.variable} dark h-full antialiased`}
     >
       <body className="min-h-full">
         <script type="application/ld+json">{jsonLd}</script>
