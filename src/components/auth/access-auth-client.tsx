@@ -4,8 +4,10 @@ import {
   IconArrowLeft,
   IconArrowRight,
   IconBarbell,
+  IconBrandGoogle,
   IconBrandWhatsapp,
   IconCheck,
+  IconChevronRight,
   IconEye,
   IconEyeOff,
   IconId,
@@ -22,6 +24,7 @@ import {
   type AuthResult,
   type AuthRole,
   type InviteValidation,
+  mockPersonalGoogleRegister,
   mockPersonalLogin,
   mockPersonalRegister,
   mockStudentLogin,
@@ -37,6 +40,7 @@ type AccessAuthClientProps = {
 type PanelTab = "login" | "register";
 type SubmitTarget =
   | "personal-login"
+  | "personal-google-register"
   | "personal-register"
   | "student-login"
   | "student-register";
@@ -93,9 +97,7 @@ export function AccessAuthClient({ initialRole, invite, token }: AccessAuthClien
   const rootRef = useRef<HTMLDivElement>(null);
   const [activeRole, setActiveRole] = useState<AuthRole>(initialRole);
   const [personalTab, setPersonalTab] = useState<PanelTab>("login");
-  const [studentTab, setStudentTab] = useState<PanelTab>(
-    invite.status === "valid" ? "register" : "login",
-  );
+  const [studentTab, setStudentTab] = useState<PanelTab>("login");
   const [personalStep, setPersonalStep] = useState(1);
   const [personalRegister, setPersonalRegister] =
     useState<PersonalRegisterForm>(emptyPersonalRegister);
@@ -115,9 +117,15 @@ export function AccessAuthClient({ initialRole, invite, token }: AccessAuthClien
     () => getPasswordStrength(studentForm.password),
     [studentForm.password],
   );
-
-  const inviteMessage = getInviteMessage(invite.status);
   const canRegisterStudent = invite.status === "valid";
+  const activeTab = activeRole === "personal" ? personalTab : studentTab;
+  const tone = activeRole === "personal" ? "dark" : "light";
+
+  function switchRole(role: AuthRole) {
+    setActiveRole(role);
+    setResult(null);
+    setFieldErrors({});
+  }
 
   function setPersonalField<Key extends keyof PersonalRegisterForm>(
     key: Key,
@@ -136,6 +144,28 @@ export function AccessAuthClient({ initialRole, invite, token }: AccessAuthClien
     setStudentForm((current) => ({ ...current, [key]: value }));
   }
 
+  function changeTab(tab: PanelTab) {
+    if (activeRole === "aluno" && tab === "register" && !canRegisterStudent) {
+      setResult({
+        target: "student-register",
+        response: {
+          ok: false,
+          message: getInviteMessage(invite.status).description,
+        },
+      });
+      return;
+    }
+
+    if (activeRole === "personal") {
+      setPersonalTab(tab);
+    } else {
+      setStudentTab(tab);
+    }
+
+    setResult(null);
+    setFieldErrors({});
+  }
+
   function nextPersonalStep() {
     const errors = validatePersonalStep(personalStep, personalRegister);
 
@@ -150,6 +180,10 @@ export function AccessAuthClient({ initialRole, invite, token }: AccessAuthClien
 
   async function submitPersonalLogin() {
     await submit("personal-login", () => mockPersonalLogin());
+  }
+
+  async function submitGoogleRegister() {
+    await submit("personal-google-register", () => mockPersonalGoogleRegister());
   }
 
   async function submitPersonalRegister() {
@@ -194,416 +228,188 @@ export function AccessAuthClient({ initialRole, invite, token }: AccessAuthClien
   }
 
   return (
-    <main className="auth-vor70" ref={rootRef}>
-      <fieldset className="auth-role-switch">
-        <legend className="auth-sr-only">Escolha o tipo de acesso</legend>
-        <button
-          type="button"
-          className={activeRole === "personal" ? "active" : ""}
-          onClick={() => setActiveRole("personal")}
-        >
-          <IconUser aria-hidden="true" />
-          Personal
-        </button>
-        <button
-          type="button"
-          className={activeRole === "aluno" ? "active" : ""}
-          onClick={() => setActiveRole("aluno")}
-        >
-          <IconRun aria-hidden="true" />
-          Aluno
-        </button>
-      </fieldset>
+    <main className="auth-vor70" ref={rootRef} data-role={activeRole}>
+      <section className="auth-split-shell" aria-label="Acesso Nodus Fit">
+        <VisualPanel role={activeRole} invite={invite} />
 
-      <section className="auth-shell" aria-label="Acesso Nodus Fit">
-        <Panel className="panel-personal" hiddenOnMobile={activeRole !== "personal"}>
-          <AmbientGlow tone="dark" />
-          <PanelInner>
-            <BrandMark tone="dark" />
-            <PersonaBadge tone="dark" icon={<IconUser aria-hidden="true" />}>
-              Area do Personal
-            </PersonaBadge>
-            <PanelHeading
-              tone="dark"
-              title={personalTab === "login" ? "Bem-vindo de volta." : "Crie sua conta."}
-              description={
-                personalTab === "login"
-                  ? "Acesse seu painel e gerencie alunos, treinos e pagamentos."
-                  : "Configure o perfil profissional em tres passos, sem sobrecarga."
-              }
-            />
+        <section className={`auth-form-panel ${tone}`}>
+          <div className="auth-form-shell">
+            <BrandMark tone={tone} />
+
+            <RoleToggle activeRole={activeRole} onChange={switchRole} />
+
+            <PersonaBadge tone={tone} role={activeRole} />
+
+            <PanelHeading tone={tone} role={activeRole} tab={activeTab} invite={invite} />
+
             <Tabs
-              tone="dark"
-              active={personalTab}
-              onChange={(tab) => {
-                setPersonalTab(tab);
-                setResult(null);
-              }}
+              active={activeTab}
+              canRegisterStudent={canRegisterStudent}
+              onChange={changeTab}
+              role={activeRole}
+              tone={tone}
             />
 
-            {personalTab === "login" ? (
-              <form className="auth-form" action={submitPersonalLogin}>
-                <AuthField
-                  tone="dark"
-                  id="personal-login-email"
-                  label="Email profissional"
-                  type="email"
-                  autoComplete="email"
-                  icon={<IconMail aria-hidden="true" />}
-                  placeholder="personal@exemplo.com"
-                  required
-                />
-                <PasswordField
-                  tone="dark"
-                  id="personal-login-password"
-                  label="Senha"
-                  autoComplete="current-password"
-                  visible={visiblePasswords.personalLogin}
-                  onToggle={() => togglePassword("personalLogin", setVisiblePasswords)}
-                  required
-                />
-                <Link className="auth-forgot dark" href="/acesso">
-                  Esqueci minha senha
-                </Link>
-                <SubmitButton
-                  tone="dark"
-                  pending={submitting === "personal-login"}
-                  label="Entrar no painel"
-                />
-              </form>
+            {activeRole === "personal" ? (
+              <PersonalForms
+                fieldErrors={fieldErrors}
+                form={personalRegister}
+                onGoogleRegister={submitGoogleRegister}
+                onLogin={submitPersonalLogin}
+                onRegister={submitPersonalRegister}
+                onStepBack={() => setPersonalStep((step) => Math.max(step - 1, 1))}
+                onStepNext={nextPersonalStep}
+                onUpdate={setPersonalField}
+                passwordStrength={personalStrength}
+                personalStep={personalStep}
+                submitting={submitting}
+                tab={personalTab}
+                visiblePasswords={visiblePasswords}
+                setVisiblePasswords={setVisiblePasswords}
+              />
             ) : (
-              <form className="auth-form" action={submitPersonalRegister}>
-                <ProgressDots tone="dark" step={personalStep} total={3} />
-                {personalStep === 1 ? (
-                  <div className="auth-step" data-r="up">
-                    <div className="auth-grid">
-                      <ControlledField
-                        tone="dark"
-                        id="personal-first-name"
-                        label="Nome"
-                        value={personalRegister.firstName}
-                        onChange={(value) => setPersonalField("firstName", value)}
-                        icon={<IconUser aria-hidden="true" />}
-                        placeholder="Marcos"
-                        error={fieldErrors.firstName}
-                        required
-                      />
-                      <ControlledField
-                        tone="dark"
-                        id="personal-last-name"
-                        label="Sobrenome"
-                        value={personalRegister.lastName}
-                        onChange={(value) => setPersonalField("lastName", value)}
-                        icon={<IconUser aria-hidden="true" />}
-                        placeholder="Pereira"
-                        error={fieldErrors.lastName}
-                        required
-                      />
-                    </div>
-                    <ControlledField
-                      tone="dark"
-                      id="personal-register-email"
-                      label="Email profissional"
-                      type="email"
-                      value={personalRegister.email}
-                      onChange={(value) => setPersonalField("email", value)}
-                      icon={<IconMail aria-hidden="true" />}
-                      placeholder="personal@exemplo.com"
-                      error={fieldErrors.personalEmail}
-                      autoComplete="email"
-                      required
-                    />
-                    <ControlledField
-                      tone="dark"
-                      id="personal-whatsapp"
-                      label="WhatsApp"
-                      value={personalRegister.whatsapp}
-                      onChange={(value) => setPersonalField("whatsapp", value)}
-                      icon={<IconBrandWhatsapp aria-hidden="true" />}
-                      placeholder="(11) 98765-4321"
-                      helper="Formato BR para notificacoes importantes."
-                      error={fieldErrors.whatsapp}
-                      required
-                    />
-                    <button
-                      className="auth-submit dark"
-                      type="button"
-                      onClick={nextPersonalStep}
-                    >
-                      Continuar <IconArrowRight aria-hidden="true" />
-                    </button>
-                  </div>
-                ) : null}
-
-                {personalStep === 2 ? (
-                  <div className="auth-step" data-r="up">
-                    <ControlledField
-                      tone="dark"
-                      id="personal-cref"
-                      label="CREF opcional"
-                      value={personalRegister.cref}
-                      onChange={(value) => setPersonalField("cref", value.toUpperCase())}
-                      icon={<IconId aria-hidden="true" />}
-                      placeholder="123456-G/SP"
-                      helper="Use o formato 000000-X/UF quando preencher."
-                      error={fieldErrors.cref}
-                    />
-                    <label className="auth-field">
-                      <span className="auth-label dark">Especialidade</span>
-                      <span className="auth-input-wrap">
-                        <IconSparkles
-                          className="auth-input-icon dark"
-                          aria-hidden="true"
-                        />
-                        <select
-                          className="auth-input dark"
-                          value={personalRegister.specialty}
-                          onChange={(event) =>
-                            setPersonalField("specialty", event.target.value)
-                          }
-                        >
-                          {specialties.map((specialty) => (
-                            <option key={specialty}>{specialty}</option>
-                          ))}
-                        </select>
-                      </span>
-                    </label>
-                    <StepActions
-                      tone="dark"
-                      onBack={() => setPersonalStep(1)}
-                      onNext={nextPersonalStep}
-                    />
-                  </div>
-                ) : null}
-
-                {personalStep === 3 ? (
-                  <div className="auth-step" data-r="up">
-                    <ControlledPasswordField
-                      tone="dark"
-                      id="personal-register-password"
-                      label="Senha"
-                      value={personalRegister.password}
-                      onChange={(value) => setPersonalField("password", value)}
-                      visible={visiblePasswords.personalRegister}
-                      onToggle={() =>
-                        togglePassword("personalRegister", setVisiblePasswords)
-                      }
-                      error={fieldErrors.password}
-                    />
-                    <PasswordStrength tone="dark" strength={personalStrength} />
-                    <ControlledPasswordField
-                      tone="dark"
-                      id="personal-confirm-password"
-                      label="Confirmar senha"
-                      value={personalRegister.confirmPassword}
-                      onChange={(value) => setPersonalField("confirmPassword", value)}
-                      visible={visiblePasswords.personalConfirm}
-                      onToggle={() =>
-                        togglePassword("personalConfirm", setVisiblePasswords)
-                      }
-                      error={fieldErrors.confirmPassword}
-                    />
-                    <div className="auth-actions">
-                      <button
-                        className="auth-back dark"
-                        type="button"
-                        onClick={() => setPersonalStep(2)}
-                      >
-                        <IconArrowLeft aria-hidden="true" /> Voltar
-                      </button>
-                      <SubmitButton
-                        tone="dark"
-                        pending={submitting === "personal-register"}
-                        label="Criar conta"
-                      />
-                    </div>
-                  </div>
-                ) : null}
-              </form>
+              <StudentForms
+                canRegisterStudent={canRegisterStudent}
+                fieldErrors={fieldErrors}
+                form={studentForm}
+                invite={invite}
+                onLogin={submitStudentLogin}
+                onRegister={submitStudentRegister}
+                onUpdate={setStudentField}
+                passwordStrength={studentStrength}
+                submitting={submitting}
+                tab={studentTab}
+                token={token}
+                visiblePasswords={visiblePasswords}
+                setVisiblePasswords={setVisiblePasswords}
+              />
             )}
-            <PanelResult result={result} targetPrefix="personal" />
-          </PanelInner>
-        </Panel>
 
-        <Panel className="panel-student" hiddenOnMobile={activeRole !== "aluno"}>
-          <AmbientGlow tone="light" />
-          <PanelInner>
-            <BrandMark tone="light" />
-            <PersonaBadge tone="light" icon={<IconRun aria-hidden="true" />}>
-              Area do Aluno
-            </PersonaBadge>
-            <PanelHeading
-              tone="light"
-              title={
-                studentTab === "login" ? "Seu treino te espera." : "Junte-se ao time."
-              }
-              description={
-                studentTab === "login"
-                  ? "Acesse o app e veja o treino de hoje."
-                  : "Crie sua conta pelo convite do seu personal."
-              }
-            />
-            <Tabs
-              tone="light"
-              active={studentTab}
-              onChange={(tab) => {
-                setStudentTab(tab);
-                setResult(null);
-              }}
-            />
-
-            {studentTab === "login" ? (
-              <form className="auth-form" action={submitStudentLogin}>
-                <AuthField
-                  tone="light"
-                  id="student-login-email"
-                  label="Email"
-                  type="email"
-                  autoComplete="email"
-                  icon={<IconMail aria-hidden="true" />}
-                  placeholder="aluno@exemplo.com"
-                  required
-                />
-                <PasswordField
-                  tone="light"
-                  id="student-login-password"
-                  label="Senha"
-                  autoComplete="current-password"
-                  visible={visiblePasswords.studentLogin}
-                  onToggle={() => togglePassword("studentLogin", setVisiblePasswords)}
-                  required
-                />
-                <Link className="auth-forgot light" href="/acesso">
-                  Esqueci minha senha
-                </Link>
-                <SubmitButton
-                  tone="light"
-                  pending={submitting === "student-login"}
-                  label="Entrar e treinar"
-                />
-              </form>
-            ) : (
-              <div className="auth-form">
-                {invite.personal ? (
-                  <div className="invite-badge light" data-r="up">
-                    <div className="invite-avatar">{invite.personal.initials}</div>
-                    <div>
-                      <span>Convite de</span>
-                      <strong>
-                        {invite.personal.name} - {invite.personal.title}
-                      </strong>
-                      <small>
-                        {invite.personal.city} · {invite.personal.students} alunos ativos
-                      </small>
-                    </div>
-                    <IconCheck aria-hidden="true" />
-                  </div>
-                ) : (
-                  <div className="invite-blocked" data-r="up">
-                    <IconShieldCheck aria-hidden="true" />
-                    <strong>{inviteMessage.title}</strong>
-                    <p>{inviteMessage.description}</p>
-                    {token ? <code>{token}</code> : null}
-                  </div>
-                )}
-
-                <form action={submitStudentRegister} className="auth-step">
-                  <ControlledField
-                    tone="light"
-                    id="student-name"
-                    label="Nome completo"
-                    value={studentForm.name}
-                    onChange={(value) => setStudentField("name", value)}
-                    icon={<IconUser aria-hidden="true" />}
-                    placeholder="Ana Costa"
-                    error={fieldErrors.studentName}
-                    disabled={!canRegisterStudent}
-                    required
-                  />
-                  <ControlledField
-                    tone="light"
-                    id="student-email"
-                    label="Email"
-                    type="email"
-                    value={studentForm.email}
-                    onChange={(value) => setStudentField("email", value)}
-                    icon={<IconMail aria-hidden="true" />}
-                    placeholder="aluno@exemplo.com"
-                    error={fieldErrors.studentEmail}
-                    disabled={!canRegisterStudent}
-                    required
-                  />
-                  <ControlledPasswordField
-                    tone="light"
-                    id="student-register-password"
-                    label="Senha"
-                    value={studentForm.password}
-                    onChange={(value) => setStudentField("password", value)}
-                    visible={visiblePasswords.studentRegister}
-                    onToggle={() =>
-                      togglePassword("studentRegister", setVisiblePasswords)
-                    }
-                    error={fieldErrors.studentPassword}
-                    disabled={!canRegisterStudent}
-                  />
-                  <PasswordStrength tone="light" strength={studentStrength} />
-                  <ControlledPasswordField
-                    tone="light"
-                    id="student-confirm-password"
-                    label="Confirmar senha"
-                    value={studentForm.confirmPassword}
-                    onChange={(value) => setStudentField("confirmPassword", value)}
-                    visible={visiblePasswords.studentConfirm}
-                    onToggle={() => togglePassword("studentConfirm", setVisiblePasswords)}
-                    error={fieldErrors.studentConfirmPassword}
-                    disabled={!canRegisterStudent}
-                  />
-                  <FeatureList disabled={!canRegisterStudent} />
-                  <SubmitButton
-                    tone="light"
-                    pending={submitting === "student-register"}
-                    label="Criar conta e comecar"
-                    disabled={!canRegisterStudent}
-                  />
-                </form>
-              </div>
-            )}
-            <PanelResult result={result} targetPrefix="student" />
-          </PanelInner>
-        </Panel>
+            <PanelResult result={result} role={activeRole} />
+          </div>
+        </section>
       </section>
     </main>
   );
 }
 
-function Panel({
-  children,
-  className,
-  hiddenOnMobile,
-}: {
-  children: React.ReactNode;
-  className: string;
-  hiddenOnMobile: boolean;
-}) {
+function VisualPanel({ invite, role }: { invite: InviteValidation; role: AuthRole }) {
+  const isPersonal = role === "personal";
+
   return (
-    <section
-      className={`auth-panel ${className} ${hiddenOnMobile ? "mobile-hidden" : ""}`}
-    >
-      {children}
-    </section>
+    <aside className={`auth-visual-panel ${isPersonal ? "personal" : "student"}`}>
+      <div className="auth-visual-orb one" />
+      <div className="auth-visual-orb two" />
+      <div className="auth-visual-content" data-r="up">
+        <span className="auth-visual-kicker">
+          {isPersonal ? "Painel do personal" : "App do aluno"}
+        </span>
+        <h2>
+          {isPersonal ? (
+            <>
+              Monte, acompanhe
+              <br />e cobre sem improviso.
+            </>
+          ) : (
+            <>
+              O treino certo
+              <br />
+              aparece na hora certa.
+            </>
+          )}
+        </h2>
+        <p>
+          {isPersonal
+            ? "Cadastro guiado, perfil profissional completo e pronto para convidar alunos em poucos minutos."
+            : "Aluno entra com email e senha. Cadastro novo so nasce de um convite valido enviado pelo personal."}
+        </p>
+
+        {isPersonal ? <PersonalMockup /> : <StudentMockup invite={invite} />}
+      </div>
+    </aside>
   );
 }
 
-function PanelInner({ children }: { children: React.ReactNode }) {
-  return <div className="auth-panel-inner">{children}</div>;
+function PersonalMockup() {
+  return (
+    <div className="auth-mockup personal" aria-hidden="true">
+      <div className="mockup-topline">
+        <span>Agenda de hoje</span>
+        <strong>12 alunos</strong>
+      </div>
+      <div className="mockup-chart">
+        {[42, 68, 54, 82, 76, 92].map((height) => (
+          <span key={height} style={{ height: `${height}%` }} />
+        ))}
+      </div>
+      <div className="mockup-list">
+        {["Ana Costa", "Bruno Lima", "Rafa Martins"].map((name, index) => (
+          <div key={name}>
+            <span>{name}</span>
+            <small>{index === 0 ? "Treino entregue" : "Aguardando check-in"}</small>
+          </div>
+        ))}
+      </div>
+    </div>
+  );
 }
 
-function AmbientGlow({ tone }: { tone: "dark" | "light" }) {
+function StudentMockup({ invite }: { invite: InviteValidation }) {
   return (
-    <>
-      <span className={`auth-glow ${tone} top`} />
-      <span className={`auth-glow ${tone} bottom`} />
-    </>
+    <div className="auth-mockup student" aria-hidden="true">
+      <div className="phone-shell">
+        <div className="phone-pill" />
+        <div className="phone-card active">
+          <span>Treino A</span>
+          <strong>Peito e triceps</strong>
+          <small>42 min · 6 exercicios</small>
+        </div>
+        <div className="phone-row">
+          <span>Supino reto</span>
+          <strong>4x10</strong>
+        </div>
+        <div className="phone-row">
+          <span>Crucifixo</span>
+          <strong>3x12</strong>
+        </div>
+        <div className="phone-invite">
+          {invite.personal
+            ? `Convite: ${invite.personal.name}`
+            : "Aguardando convite valido"}
+        </div>
+      </div>
+    </div>
+  );
+}
+
+function RoleToggle({
+  activeRole,
+  onChange,
+}: {
+  activeRole: AuthRole;
+  onChange: (role: AuthRole) => void;
+}) {
+  return (
+    <fieldset className="auth-role-toggle">
+      <legend className="auth-sr-only">Escolha o tipo de acesso</legend>
+      <span className={`auth-role-pill ${activeRole}`} />
+      <button
+        type="button"
+        className={activeRole === "personal" ? "active" : ""}
+        onClick={() => onChange("personal")}
+      >
+        <IconUser aria-hidden="true" />
+        Personal
+      </button>
+      <button
+        type="button"
+        className={activeRole === "aluno" ? "active" : ""}
+        onClick={() => onChange("aluno")}
+      >
+        <IconRun aria-hidden="true" />
+        Aluno
+      </button>
+    </fieldset>
   );
 }
 
@@ -620,32 +426,51 @@ function BrandMark({ tone }: { tone: "dark" | "light" }) {
   );
 }
 
-function PersonaBadge({
-  children,
-  icon,
-  tone,
-}: {
-  children: React.ReactNode;
-  icon: React.ReactNode;
-  tone: "dark" | "light";
-}) {
+function PersonaBadge({ role, tone }: { role: AuthRole; tone: "dark" | "light" }) {
   return (
     <span className={`persona-badge-auth ${tone}`}>
-      {icon}
-      {children}
+      {role === "personal" ? (
+        <IconUser aria-hidden="true" />
+      ) : (
+        <IconRun aria-hidden="true" />
+      )}
+      {role === "personal" ? "Area do Personal" : "Area do Aluno"}
     </span>
   );
 }
 
 function PanelHeading({
-  description,
-  title,
+  invite,
+  role,
+  tab,
   tone,
 }: {
-  description: string;
-  title: string;
+  invite: InviteValidation;
+  role: AuthRole;
+  tab: PanelTab;
   tone: "dark" | "light";
 }) {
+  const isPersonal = role === "personal";
+  const hasInvite = invite.status === "valid";
+
+  const title = isPersonal
+    ? tab === "login"
+      ? "Bem-vindo de volta."
+      : "Crie sua conta."
+    : tab === "login"
+      ? "Seu treino te espera."
+      : "Cadastro por convite.";
+
+  const description = isPersonal
+    ? tab === "login"
+      ? "Acesse seu painel e gerencie alunos, treinos e pagamentos."
+      : "Configure seu perfil profissional em tres etapas guiadas."
+    : tab === "login"
+      ? "Entre com email e senha para acessar o app do aluno."
+      : hasInvite
+        ? "Complete seu acesso vinculado ao personal que te convidou."
+        : "Abra o link enviado pelo seu personal para liberar o cadastro.";
+
   return (
     <header className={`auth-heading ${tone}`} data-r="up">
       <h1>{title}</h1>
@@ -656,13 +481,19 @@ function PanelHeading({
 
 function Tabs({
   active,
+  canRegisterStudent,
   onChange,
+  role,
   tone,
 }: {
   active: PanelTab;
+  canRegisterStudent: boolean;
   onChange: (tab: PanelTab) => void;
+  role: AuthRole;
   tone: "dark" | "light";
 }) {
+  const registerDisabled = role === "aluno" && !canRegisterStudent;
+
   return (
     <div className={`auth-tabs ${tone}`} role="tablist" aria-label="Tipo de acesso">
       <button
@@ -678,11 +509,416 @@ function Tabs({
         type="button"
         role="tab"
         aria-selected={active === "register"}
+        aria-disabled={registerDisabled}
         className={active === "register" ? "active" : ""}
         onClick={() => onChange("register")}
       >
-        Criar conta
+        {role === "aluno" ? "Cadastrar via convite" : "Criar conta"}
       </button>
+    </div>
+  );
+}
+
+function PersonalForms({
+  fieldErrors,
+  form,
+  onGoogleRegister,
+  onLogin,
+  onRegister,
+  onStepBack,
+  onStepNext,
+  onUpdate,
+  passwordStrength,
+  personalStep,
+  setVisiblePasswords,
+  submitting,
+  tab,
+  visiblePasswords,
+}: {
+  fieldErrors: Record<string, string>;
+  form: PersonalRegisterForm;
+  onGoogleRegister: () => Promise<void>;
+  onLogin: () => Promise<void>;
+  onRegister: () => Promise<void>;
+  onStepBack: () => void;
+  onStepNext: () => void;
+  onUpdate: <Key extends keyof PersonalRegisterForm>(
+    key: Key,
+    value: PersonalRegisterForm[Key],
+  ) => void;
+  passwordStrength: { score: number; label: string };
+  personalStep: number;
+  setVisiblePasswords: React.Dispatch<React.SetStateAction<Record<string, boolean>>>;
+  submitting: SubmitTarget | null;
+  tab: PanelTab;
+  visiblePasswords: Record<string, boolean>;
+}) {
+  if (tab === "login") {
+    return (
+      <form className="auth-form" action={onLogin}>
+        <AuthField
+          tone="dark"
+          id="personal-login-email"
+          label="Email profissional"
+          type="email"
+          autoComplete="email"
+          icon={<IconMail aria-hidden="true" />}
+          placeholder="personal@exemplo.com"
+          required
+        />
+        <PasswordField
+          tone="dark"
+          id="personal-login-password"
+          label="Senha"
+          autoComplete="current-password"
+          visible={visiblePasswords.personalLogin}
+          onToggle={() => togglePassword("personalLogin", setVisiblePasswords)}
+          required
+        />
+        <Link className="auth-forgot dark" href="/acesso">
+          Esqueci minha senha
+        </Link>
+        <SubmitButton
+          tone="dark"
+          pending={submitting === "personal-login"}
+          label="Entrar no painel"
+        />
+      </form>
+    );
+  }
+
+  return (
+    <form className="auth-form" action={onRegister}>
+      <ProgressDots tone="dark" step={personalStep} total={3} />
+
+      {personalStep === 1 ? (
+        <div className="auth-step" data-r="up">
+          <GoogleButton
+            disabled={submitting === "personal-google-register"}
+            onClick={onGoogleRegister}
+          />
+          <Divider label="ou preencha os dados" tone="dark" />
+          <div className="auth-grid">
+            <ControlledField
+              tone="dark"
+              id="personal-first-name"
+              label="Nome"
+              value={form.firstName}
+              onChange={(value) => onUpdate("firstName", value)}
+              icon={<IconUser aria-hidden="true" />}
+              placeholder="Marcos"
+              error={fieldErrors.firstName}
+              required
+            />
+            <ControlledField
+              tone="dark"
+              id="personal-last-name"
+              label="Sobrenome"
+              value={form.lastName}
+              onChange={(value) => onUpdate("lastName", value)}
+              icon={<IconUser aria-hidden="true" />}
+              placeholder="Pereira"
+              error={fieldErrors.lastName}
+              required
+            />
+          </div>
+          <ControlledField
+            tone="dark"
+            id="personal-register-email"
+            label="Email profissional"
+            type="email"
+            value={form.email}
+            onChange={(value) => onUpdate("email", value)}
+            icon={<IconMail aria-hidden="true" />}
+            placeholder="personal@exemplo.com"
+            error={fieldErrors.personalEmail}
+            autoComplete="email"
+            required
+          />
+          <ControlledField
+            tone="dark"
+            id="personal-whatsapp"
+            label="WhatsApp"
+            value={form.whatsapp}
+            onChange={(value) => onUpdate("whatsapp", value)}
+            icon={<IconBrandWhatsapp aria-hidden="true" />}
+            placeholder="(11) 98765-4321"
+            helper="Formato BR para notificacoes e verificacao."
+            error={fieldErrors.whatsapp}
+            required
+          />
+          <button className="auth-submit dark" type="button" onClick={onStepNext}>
+            Continuar <IconArrowRight aria-hidden="true" />
+          </button>
+        </div>
+      ) : null}
+
+      {personalStep === 2 ? (
+        <div className="auth-step" data-r="up">
+          <ControlledField
+            tone="dark"
+            id="personal-cref"
+            label="CREF opcional"
+            value={form.cref}
+            onChange={(value) => onUpdate("cref", value.toUpperCase())}
+            icon={<IconId aria-hidden="true" />}
+            placeholder="123456-G/SP"
+            helper="Use o formato 000000-X/UF quando preencher."
+            error={fieldErrors.cref}
+          />
+          <label className="auth-field" htmlFor="personal-specialty">
+            <span className="auth-label dark">Especialidade</span>
+            <span className="auth-input-wrap">
+              <IconSparkles className="auth-input-icon dark" aria-hidden="true" />
+              <select
+                className="auth-input dark"
+                id="personal-specialty"
+                value={form.specialty}
+                onChange={(event) => onUpdate("specialty", event.target.value)}
+              >
+                {specialties.map((specialty) => (
+                  <option key={specialty}>{specialty}</option>
+                ))}
+              </select>
+            </span>
+          </label>
+          <StepActions tone="dark" onBack={onStepBack} onNext={onStepNext} />
+        </div>
+      ) : null}
+
+      {personalStep === 3 ? (
+        <div className="auth-step" data-r="up">
+          <ControlledPasswordField
+            tone="dark"
+            id="personal-register-password"
+            label="Senha"
+            value={form.password}
+            onChange={(value) => onUpdate("password", value)}
+            visible={visiblePasswords.personalRegister}
+            onToggle={() => togglePassword("personalRegister", setVisiblePasswords)}
+            error={fieldErrors.password}
+          />
+          <PasswordStrength tone="dark" strength={passwordStrength} />
+          <ControlledPasswordField
+            tone="dark"
+            id="personal-confirm-password"
+            label="Confirmar senha"
+            value={form.confirmPassword}
+            onChange={(value) => onUpdate("confirmPassword", value)}
+            visible={visiblePasswords.personalConfirm}
+            onToggle={() => togglePassword("personalConfirm", setVisiblePasswords)}
+            error={fieldErrors.confirmPassword}
+          />
+          <div className="auth-actions">
+            <button className="auth-back dark" type="button" onClick={onStepBack}>
+              <IconArrowLeft aria-hidden="true" /> Voltar
+            </button>
+            <SubmitButton
+              tone="dark"
+              pending={submitting === "personal-register"}
+              label="Criar conta"
+            />
+          </div>
+        </div>
+      ) : null}
+    </form>
+  );
+}
+
+function StudentForms({
+  canRegisterStudent,
+  fieldErrors,
+  form,
+  invite,
+  onLogin,
+  onRegister,
+  onUpdate,
+  passwordStrength,
+  setVisiblePasswords,
+  submitting,
+  tab,
+  token,
+  visiblePasswords,
+}: {
+  canRegisterStudent: boolean;
+  fieldErrors: Record<string, string>;
+  form: StudentForm;
+  invite: InviteValidation;
+  onLogin: () => Promise<void>;
+  onRegister: () => Promise<void>;
+  onUpdate: <Key extends keyof StudentForm>(key: Key, value: StudentForm[Key]) => void;
+  passwordStrength: { score: number; label: string };
+  setVisiblePasswords: React.Dispatch<React.SetStateAction<Record<string, boolean>>>;
+  submitting: SubmitTarget | null;
+  tab: PanelTab;
+  token?: string;
+  visiblePasswords: Record<string, boolean>;
+}) {
+  if (tab === "login") {
+    return (
+      <form className="auth-form" action={onLogin}>
+        <AuthField
+          tone="light"
+          id="student-login-email"
+          label="Email"
+          type="email"
+          autoComplete="email"
+          icon={<IconMail aria-hidden="true" />}
+          placeholder="aluno@exemplo.com"
+          required
+        />
+        <PasswordField
+          tone="light"
+          id="student-login-password"
+          label="Senha"
+          autoComplete="current-password"
+          visible={visiblePasswords.studentLogin}
+          onToggle={() => togglePassword("studentLogin", setVisiblePasswords)}
+          required
+        />
+        <Link className="auth-forgot light" href="/acesso">
+          Esqueci minha senha
+        </Link>
+        <SubmitButton
+          tone="light"
+          pending={submitting === "student-login"}
+          label="Entrar e treinar"
+        />
+        <InviteHint invite={invite} token={token} />
+      </form>
+    );
+  }
+
+  return (
+    <div className="auth-form">
+      <InviteHint invite={invite} token={token} expanded />
+      <form action={onRegister} className="auth-step">
+        <ControlledField
+          tone="light"
+          id="student-name"
+          label="Nome completo"
+          value={form.name}
+          onChange={(value) => onUpdate("name", value)}
+          icon={<IconUser aria-hidden="true" />}
+          placeholder="Ana Costa"
+          error={fieldErrors.studentName}
+          disabled={!canRegisterStudent}
+          required
+        />
+        <ControlledField
+          tone="light"
+          id="student-email"
+          label="Email"
+          type="email"
+          value={form.email}
+          onChange={(value) => onUpdate("email", value)}
+          icon={<IconMail aria-hidden="true" />}
+          placeholder="aluno@exemplo.com"
+          error={fieldErrors.studentEmail}
+          disabled={!canRegisterStudent}
+          required
+        />
+        <ControlledPasswordField
+          tone="light"
+          id="student-register-password"
+          label="Senha"
+          value={form.password}
+          onChange={(value) => onUpdate("password", value)}
+          visible={visiblePasswords.studentRegister}
+          onToggle={() => togglePassword("studentRegister", setVisiblePasswords)}
+          error={fieldErrors.studentPassword}
+          disabled={!canRegisterStudent}
+        />
+        <PasswordStrength tone="light" strength={passwordStrength} />
+        <ControlledPasswordField
+          tone="light"
+          id="student-confirm-password"
+          label="Confirmar senha"
+          value={form.confirmPassword}
+          onChange={(value) => onUpdate("confirmPassword", value)}
+          visible={visiblePasswords.studentConfirm}
+          onToggle={() => togglePassword("studentConfirm", setVisiblePasswords)}
+          error={fieldErrors.studentConfirmPassword}
+          disabled={!canRegisterStudent}
+        />
+        <FeatureList disabled={!canRegisterStudent} />
+        <SubmitButton
+          tone="light"
+          pending={submitting === "student-register"}
+          label="Criar conta e comecar"
+          disabled={!canRegisterStudent}
+        />
+      </form>
+    </div>
+  );
+}
+
+function GoogleButton({
+  disabled,
+  onClick,
+}: {
+  disabled: boolean;
+  onClick: () => Promise<void>;
+}) {
+  return (
+    <button
+      className="google-auth-btn"
+      disabled={disabled}
+      type="button"
+      onClick={onClick}
+    >
+      <IconBrandGoogle aria-hidden="true" />
+      {disabled ? "Conectando com Google" : "Registrar com Google"}
+      <IconChevronRight aria-hidden="true" />
+    </button>
+  );
+}
+
+function Divider({ label, tone }: { label: string; tone: "dark" | "light" }) {
+  return (
+    <div className={`auth-divider ${tone}`}>
+      <span />
+      <small>{label}</small>
+      <span />
+    </div>
+  );
+}
+
+function InviteHint({
+  expanded,
+  invite,
+  token,
+}: {
+  expanded?: boolean;
+  invite: InviteValidation;
+  token?: string;
+}) {
+  const message = getInviteMessage(invite.status);
+
+  if (invite.personal) {
+    return (
+      <div className={`invite-badge light ${expanded ? "expanded" : ""}`} data-r="up">
+        <div className="invite-avatar">{invite.personal.initials}</div>
+        <div>
+          <span>Convite de</span>
+          <strong>
+            {invite.personal.name} - {invite.personal.title}
+          </strong>
+          <small>
+            {invite.personal.city} · {invite.personal.students} alunos ativos
+          </small>
+        </div>
+        <IconCheck aria-hidden="true" />
+      </div>
+    );
+  }
+
+  return (
+    <div className={`invite-blocked ${expanded ? "expanded" : ""}`} data-r="up">
+      <IconShieldCheck aria-hidden="true" />
+      <strong>{message.title}</strong>
+      <p>{message.description}</p>
+      {token ? <code>{token}</code> : null}
     </div>
   );
 }
@@ -997,24 +1233,16 @@ function FeatureList({ disabled }: { disabled: boolean }) {
   );
 }
 
-function PanelResult({
-  result,
-  targetPrefix,
-}: {
-  result: SubmitResult | null;
-  targetPrefix: "personal" | "student";
-}) {
+function PanelResult({ result, role }: { result: SubmitResult | null; role: AuthRole }) {
   const targetMatches =
-    targetPrefix === "personal"
+    role === "personal"
       ? result?.target.startsWith("personal")
       : result?.target.startsWith("student");
 
   if (
     !result ||
     !targetMatches ||
-    (!result.response.ok &&
-      result.response.field === "email" &&
-      targetPrefix === "personal")
+    (!result.response.ok && result.response.field === "email" && role === "personal")
   ) {
     return null;
   }
@@ -1024,7 +1252,11 @@ function PanelResult({
       className={`auth-result ${result.response.ok ? "success" : "error"}`}
       role="status"
     >
-      <IconCheck aria-hidden="true" />
+      {result.response.ok ? (
+        <IconCheck aria-hidden="true" />
+      ) : (
+        <IconShieldCheck aria-hidden="true" />
+      )}
       <span>{result.response.message}</span>
       {result.response.ok ? <small>Destino: {result.response.redirectTo}</small> : null}
     </div>

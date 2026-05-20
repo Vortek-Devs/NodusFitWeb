@@ -88,6 +88,16 @@ export async function mockPersonalRegister(email: string): Promise<AuthResult> {
   };
 }
 
+export async function mockPersonalGoogleRegister(): Promise<AuthResult> {
+  await waitForMock();
+
+  return {
+    ok: true,
+    redirectTo: "/onboarding",
+    message: "Conta Google conectada. Finalize seu onboarding profissional.",
+  };
+}
+
 export async function mockStudentLogin(): Promise<AuthResult> {
   await waitForMock();
 
