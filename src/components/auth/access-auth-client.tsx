@@ -297,86 +297,106 @@ function VisualPanel({ invite, role }: { invite: InviteValidation; role: AuthRol
   const isPersonal = role === "personal";
 
   return (
-    <aside className={`auth-visual-panel ${isPersonal ? "personal" : "student"}`}>
-      <div className="auth-visual-orb one" />
-      <div className="auth-visual-orb two" />
-      <div className="auth-visual-content" data-r="up">
+    <aside className="auth-visual-panel">
+      <div
+        className={`auth-visual-content ${isPersonal ? "personal" : "student"}`}
+        data-r="up"
+        key={role}
+      >
         <span className="auth-visual-kicker">
-          {isPersonal ? "Painel do personal" : "App do aluno"}
+          {isPersonal ? "Operacao do personal" : "Experiencia do aluno"}
         </span>
         <h2>
           {isPersonal ? (
             <>
-              Monte, acompanhe
-              <br />e cobre sem improviso.
+              Controle a rotina
+              <br />
+              sem perder o aluno.
             </>
           ) : (
             <>
-              O treino certo
-              <br />
-              aparece na hora certa.
+              O convite abre
+              <br />o treino certo.
             </>
           )}
         </h2>
         <p>
           {isPersonal
-            ? "Cadastro guiado, perfil profissional completo e pronto para convidar alunos em poucos minutos."
-            : "Aluno entra com email e senha. Cadastro novo so nasce de um convite valido enviado pelo personal."}
+            ? "Acesso profissional com cadastro completo, Google opcional e uma base pronta para enviar convites."
+            : "Aluno usa email e senha no dia a dia. Cadastro novo so aparece quando o link do personal e valido."}
         </p>
 
-        {isPersonal ? <PersonalMockup /> : <StudentMockup invite={invite} />}
+        {isPersonal ? <PersonalScene /> : <StudentScene invite={invite} />}
       </div>
     </aside>
   );
 }
 
-function PersonalMockup() {
+function PersonalScene() {
   return (
-    <div className="auth-mockup personal" aria-hidden="true">
-      <div className="mockup-topline">
-        <span>Agenda de hoje</span>
-        <strong>12 alunos</strong>
+    <div className="auth-scene personal" aria-hidden="true">
+      <div className="scene-card scene-card-main">
+        <div className="scene-card-top">
+          <span>Hoje</span>
+          <strong>18:30</strong>
+        </div>
+        <div className="scene-timeline">
+          {["Check-in", "Treino B", "Pagamento"].map((item, index) => (
+            <div className="scene-timeline-row" key={item}>
+              <span>{index + 1}</span>
+              <strong>{item}</strong>
+              <small>
+                {index === 0 ? "feito" : index === 1 ? "enviado" : "pendente"}
+              </small>
+            </div>
+          ))}
+        </div>
       </div>
-      <div className="mockup-chart">
-        {[42, 68, 54, 82, 76, 92].map((height) => (
-          <span key={height} style={{ height: `${height}%` }} />
-        ))}
+      <div className="scene-card scene-card-side">
+        <span>Convites ativos</span>
+        <strong>27</strong>
+        <small>8 cadastros esta semana</small>
       </div>
-      <div className="mockup-list">
-        {["Ana Costa", "Bruno Lima", "Rafa Martins"].map((name, index) => (
-          <div key={name}>
-            <span>{name}</span>
-            <small>{index === 0 ? "Treino entregue" : "Aguardando check-in"}</small>
-          </div>
-        ))}
+      <div className="scene-progress-ring">
+        <span>74%</span>
+        <small>adesao</small>
+      </div>
+      <div className="scene-thread">
+        <i />
+        <i />
+        <i />
+        <i />
       </div>
     </div>
   );
 }
 
-function StudentMockup({ invite }: { invite: InviteValidation }) {
+function StudentScene({ invite }: { invite: InviteValidation }) {
   return (
-    <div className="auth-mockup student" aria-hidden="true">
-      <div className="phone-shell">
-        <div className="phone-pill" />
-        <div className="phone-card active">
-          <span>Treino A</span>
-          <strong>Peito e triceps</strong>
-          <small>42 min · 6 exercicios</small>
+    <div className="auth-scene student" aria-hidden="true">
+      <div className="student-phone">
+        <div className="student-phone-bar" />
+        <div className="student-hero-card">
+          <span>Treino de hoje</span>
+          <strong>Forca superior</strong>
+          <small>42 min / 6 exercicios</small>
         </div>
-        <div className="phone-row">
-          <span>Supino reto</span>
-          <strong>4x10</strong>
+        <div className="student-set-list">
+          {["Aquecimento", "Supino reto", "Remada baixa"].map((item, index) => (
+            <div key={item}>
+              <span>{item}</span>
+              <strong>{index === 0 ? "8 min" : index === 1 ? "4x10" : "3x12"}</strong>
+            </div>
+          ))}
         </div>
-        <div className="phone-row">
-          <span>Crucifixo</span>
-          <strong>3x12</strong>
-        </div>
-        <div className="phone-invite">
-          {invite.personal
-            ? `Convite: ${invite.personal.name}`
-            : "Aguardando convite valido"}
-        </div>
+      </div>
+      <div className="student-invite-card">
+        <span>{invite.personal ? "Convite validado" : "Convite necessario"}</span>
+        <strong>{invite.personal?.name ?? "Link do personal"}</strong>
+        <small>{invite.personal?.title ?? "Cadastro bloqueado ate validar"}</small>
+      </div>
+      <div className="student-orbit">
+        <IconBarbell aria-hidden="true" />
       </div>
     </div>
   );
