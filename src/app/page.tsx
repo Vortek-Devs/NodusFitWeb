@@ -281,9 +281,9 @@ function Navigation() {
           <a className="nav-a" href="#precos">
             Preços
           </a>
-          <a className="nav-cta" href={mailTo}>
+          <Link className="nav-cta" href="/acesso">
             Começar grátis
-          </a>
+          </Link>
         </div>
       </div>
     </nav>
@@ -311,9 +311,9 @@ function Hero() {
           aderência e pagamentos em um único lugar, finalmente.
         </p>
         <div className="hero-actions" data-d="3" data-r="up">
-          <a className="btn-p" data-mag href={mailTo}>
+          <Link className="btn-p" data-mag href="/acesso">
             Começar grátis <IconArrowRight size={18} aria-hidden="true" />
-          </a>
+          </Link>
           <a className="btn-g" href="#funcionalidades">
             <IconPlayerPlayFilled size={13} aria-hidden="true" /> Ver demo
           </a>
@@ -817,9 +817,9 @@ function AudienceCard({
         ))}
       </div>
       {cta ? (
-        <a className="btn-p fit-btn" href={mailTo}>
+        <Link className="btn-p fit-btn" href="/acesso">
           {cta} <IconArrowRight size={17} aria-hidden="true" />
-        </a>
+        </Link>
       ) : null}
       {note ? <p className="for-note lt">{note}</p> : null}
     </article>
@@ -946,9 +946,12 @@ function Pricing() {
                   </div>
                 ))}
               </div>
-              <a className={`plan-btn ${plan.featured ? "mint" : ""}`} href={mailTo}>
+              <Link
+                className={`plan-btn ${plan.featured ? "mint" : ""}`}
+                href={plan.tier === "Free" ? "/acesso" : mailTo}
+              >
                 {plan.cta}
-              </a>
+              </Link>
               {plan.save ? <div className="plan-save">{plan.save}</div> : null}
             </article>
           ))}
@@ -1008,9 +1011,9 @@ function FinalCta() {
             escapar. Seja esse profissional agora.
           </p>
           <div className="cta-acts">
-            <a className="btn-p cta-primary" data-mag href={mailTo}>
+            <Link className="btn-p cta-primary" data-mag href="/acesso">
               Criar conta grátis <IconArrowRight size={19} aria-hidden="true" />
-            </a>
+            </Link>
             <a className="btn-g cta-secondary" href="/contato">
               Falar com a equipe
             </a>
