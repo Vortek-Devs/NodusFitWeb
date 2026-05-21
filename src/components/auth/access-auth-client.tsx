@@ -23,12 +23,15 @@ import { useEffect, useMemo, useRef, useState } from "react";
 import {
   type AuthResult,
   type AuthRole,
+  type AuthUser,
   type InviteValidation,
-  mockPersonalGoogleRegister,
-  mockPersonalLogin,
-  mockPersonalRegister,
   mockStudentLogin,
   mockStudentRegister,
+  personalEmailLogin,
+  personalEmailRegister,
+  personalGoogleCompleteProfile,
+  personalGoogleLogin,
+  personalGoogleStart,
 } from "@/lib/auth/mock-auth";
 
 type AccessAuthClientProps = {
@@ -40,7 +43,9 @@ type AccessAuthClientProps = {
 type PanelTab = "login" | "register";
 type SubmitTarget =
   | "personal-login"
+  | "personal-google-login"
   | "personal-google-register"
+  | "personal-google-profile"
   | "personal-register"
   | "student-login"
   | "student-register";
@@ -106,6 +111,7 @@ export function AccessAuthClient({ initialRole, invite, token }: AccessAuthClien
   const [submitting, setSubmitting] = useState<SubmitTarget | null>(null);
   const [result, setResult] = useState<SubmitResult | null>(null);
   const [fieldErrors, setFieldErrors] = useState<Record<string, string>>({});
+  const [googlePersonal, setGooglePersonal] = useState<AuthUser | null>(null);
 
   useRevealMotion(rootRef);
 
@@ -158,6 +164,10 @@ export function AccessAuthClient({ initialRole, invite, token }: AccessAuthClien
 
     if (activeRole === "personal") {
       setPersonalTab(tab);
+      if (tab === "login") {
+        setGooglePersonal(null);
+        setPersonalStep(1);
+      }
     } else {
       setStudentTab(tab);
     }
@@ -179,11 +189,25 @@ export function AccessAuthClient({ initialRole, invite, token }: AccessAuthClien
   }
 
   async function submitPersonalLogin() {
-    await submit("personal-login", () => mockPersonalLogin());
+    await submit("personal-login", () => personalEmailLogin());
   }
 
-  async function submitGoogleRegister() {
-    await submit("personal-google-register", () => mockPersonalGoogleRegister());
+  async function submitGoogleLogin() {
+    await submit("personal-google-login", () => personalGoogleLogin());
+  }
+
+  async function startGoogleRegister() {
+    await submit(
+      "personal-google-register",
+      () => personalGoogleStart(),
+      (response) => {
+        if (response.ok) {
+          setGooglePersonal(response.user);
+          setPersonalTab("register");
+          setPersonalStep(2);
+        }
+      },
+    );
   }
 
   async function submitPersonalRegister() {
@@ -194,7 +218,20 @@ export function AccessAuthClient({ initialRole, invite, token }: AccessAuthClien
       return;
     }
 
-    await submit("personal-register", () => mockPersonalRegister(personalRegister.email));
+    await submit("personal-register", () =>
+      personalEmailRegister(personalRegister.email),
+    );
+  }
+
+  async function submitGoogleProfile() {
+    const errors = validatePersonalStep(2, personalRegister);
+
+    if (Object.keys(errors).length > 0) {
+      setFieldErrors(errors);
+      return;
+    }
+
+    await submit("personal-google-profile", () => personalGoogleCompleteProfile());
   }
 
   async function submitStudentLogin() {
@@ -212,7 +249,11 @@ export function AccessAuthClient({ initialRole, invite, token }: AccessAuthClien
     await submit("student-register", () => mockStudentRegister(invite));
   }
 
-  async function submit(target: SubmitTarget, action: () => Promise<AuthResult>) {
+  async function submit(
+    target: SubmitTarget,
+    action: () => Promise<AuthResult>,
+    afterSubmit?: (response: AuthResult) => void,
+  ) {
     setSubmitting(target);
     setResult(null);
 
@@ -220,6 +261,7 @@ export function AccessAuthClient({ initialRole, invite, token }: AccessAuthClien
 
     setSubmitting(null);
     setResult({ target, response });
+    afterSubmit?.(response);
 
     if (!response.ok && response.field === "email") {
       setPersonalStep(1);
@@ -254,7 +296,10 @@ export function AccessAuthClient({ initialRole, invite, token }: AccessAuthClien
               <PersonalForms
                 fieldErrors={fieldErrors}
                 form={personalRegister}
-                onGoogleRegister={submitGoogleRegister}
+                googlePersonal={googlePersonal}
+                onGoogleLogin={submitGoogleLogin}
+                onGoogleProfile={submitGoogleProfile}
+                onGoogleRegister={startGoogleRegister}
                 onLogin={submitPersonalLogin}
                 onRegister={submitPersonalRegister}
                 onStepBack={() => setPersonalStep((step) => Math.max(step - 1, 1))}
@@ -542,6 +587,9 @@ function Tabs({
 function PersonalForms({
   fieldErrors,
   form,
+  googlePersonal,
+  onGoogleLogin,
+  onGoogleProfile,
   onGoogleRegister,
   onLogin,
   onRegister,
@@ -557,6 +605,9 @@ function PersonalForms({
 }: {
   fieldErrors: Record<string, string>;
   form: PersonalRegisterForm;
+  googlePersonal: AuthUser | null;
+  onGoogleLogin: () => Promise<void>;
+  onGoogleProfile: () => Promise<void>;
   onGoogleRegister: () => Promise<void>;
   onLogin: () => Promise<void>;
   onRegister: () => Promise<void>;
@@ -573,9 +624,18 @@ function PersonalForms({
   tab: PanelTab;
   visiblePasswords: Record<string, boolean>;
 }) {
+  const isGoogleRegister = Boolean(googlePersonal);
+
   if (tab === "login") {
     return (
       <form className="auth-form" action={onLogin}>
+        <GoogleButton
+          disabled={submitting === "personal-google-login"}
+          label="Entrar com Google"
+          loadingLabel="Entrando com Google"
+          onClick={onGoogleLogin}
+        />
+        <Divider label="ou entre com email" tone="dark" />
         <AuthField
           tone="dark"
           id="personal-login-email"
@@ -609,12 +669,18 @@ function PersonalForms({
 
   return (
     <form className="auth-form" action={onRegister}>
-      <ProgressDots tone="dark" step={personalStep} total={3} />
+      {googlePersonal ? (
+        <GoogleProfileSummary user={googlePersonal} />
+      ) : (
+        <ProgressDots tone="dark" step={personalStep} total={3} />
+      )}
 
-      {personalStep === 1 ? (
+      {personalStep === 1 && !isGoogleRegister ? (
         <div className="auth-step" data-r="up">
           <GoogleButton
             disabled={submitting === "personal-google-register"}
+            label="Entrar com Google"
+            loadingLabel="Conectando com Google"
             onClick={onGoogleRegister}
           />
           <Divider label="ou preencha os dados" tone="dark" />
@@ -702,7 +768,16 @@ function PersonalForms({
               </select>
             </span>
           </label>
-          <StepActions tone="dark" onBack={onStepBack} onNext={onStepNext} />
+          {isGoogleRegister ? (
+            <SubmitButton
+              tone="dark"
+              pending={submitting === "personal-google-profile"}
+              label="Finalizar perfil Google"
+              action={onGoogleProfile}
+            />
+          ) : (
+            <StepActions tone="dark" onBack={onStepBack} onNext={onStepNext} />
+          )}
         </div>
       ) : null}
 
@@ -875,9 +950,13 @@ function StudentForms({
 
 function GoogleButton({
   disabled,
+  label,
+  loadingLabel,
   onClick,
 }: {
   disabled: boolean;
+  label: string;
+  loadingLabel: string;
   onClick: () => Promise<void>;
 }) {
   return (
@@ -888,9 +967,28 @@ function GoogleButton({
       onClick={onClick}
     >
       <IconBrandGoogle aria-hidden="true" />
-      {disabled ? "Conectando com Google" : "Registrar com Google"}
+      {disabled ? loadingLabel : label}
       <IconChevronRight aria-hidden="true" />
     </button>
+  );
+}
+
+function GoogleProfileSummary({ user }: { user: AuthUser }) {
+  return (
+    <div className="google-profile-summary" data-r="up">
+      <span className="google-avatar" aria-hidden="true">
+        {user.name
+          .split(" ")
+          .map((part) => part[0])
+          .slice(0, 2)
+          .join("")}
+      </span>
+      <div>
+        <strong>{user.name}</strong>
+        <small>{user.email}</small>
+        <p>Google preencheu nome e avatar. Falta apenas CREF e especialidade.</p>
+      </div>
+    </div>
   );
 }
 
@@ -1209,11 +1307,13 @@ function StepActions({
 }
 
 function SubmitButton({
+  action,
   disabled,
   label,
   pending,
   tone,
 }: {
+  action?: () => void | Promise<void>;
   disabled?: boolean;
   label: string;
   pending: boolean;
@@ -1223,7 +1323,8 @@ function SubmitButton({
     <button
       className={`auth-submit ${tone}`}
       disabled={disabled || pending}
-      type="submit"
+      type={action ? "button" : "submit"}
+      onClick={action}
     >
       <span className="auth-spinner" aria-hidden="true" />
       <span>
@@ -1278,7 +1379,20 @@ function PanelResult({ result, role }: { result: SubmitResult | null; role: Auth
         <IconShieldCheck aria-hidden="true" />
       )}
       <span>{result.response.message}</span>
-      {result.response.ok ? <small>Destino: {result.response.redirectTo}</small> : null}
+      {result.response.ok ? (
+        <>
+          <small>
+            {result.response.backendContract.endpoint} / role: {result.response.user.role}{" "}
+            / destino: {result.response.redirectTo}
+          </small>
+          {result.response.emailVerificationSent ? (
+            <small>
+              Email de verificacao enviado. Bloqueado ate validar:{" "}
+              {result.response.featuresLockedUntilEmailVerified?.join(", ")}.
+            </small>
+          ) : null}
+        </>
+      ) : null}
     </div>
   );
 }

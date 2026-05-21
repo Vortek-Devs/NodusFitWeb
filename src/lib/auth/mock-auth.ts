@@ -13,11 +13,35 @@ export type InviteValidation = {
   };
 };
 
+export type AuthUser = {
+  id: string;
+  email: string;
+  name: string;
+  image?: string;
+  role: AuthRole;
+  personalId: string | null;
+  emailVerified: boolean;
+};
+
+// BetterAuth will rotate refresh tokens through httpOnly cookies. The client contract
+// intentionally exposes only short-lived access-token shaped data for mocks.
 export type AuthResult =
   | {
       ok: true;
       redirectTo: string;
       message: string;
+      token?: string;
+      user: AuthUser;
+      authMethod: "email" | "google";
+      emailVerificationSent?: boolean;
+      featuresLockedUntilEmailVerified?: string[];
+      backendContract: {
+        endpoint: string;
+        refreshToken: "httpOnly-cookie";
+        additionalFields?: {
+          role: AuthRole;
+        };
+      };
     }
   | {
       ok: false;
@@ -32,6 +56,8 @@ const duplicatePersonalEmails = new Set([
   "duplicado@nodus.fit",
   "teste@nodus.fit",
 ]);
+
+const lockedPersonalFeatures = ["Convidar alunos", "Controle financeiro"];
 
 export function validateInviteToken(token?: string): InviteValidation {
   if (!token) {
@@ -60,17 +86,58 @@ export function validateInviteToken(token?: string): InviteValidation {
   };
 }
 
-export async function mockPersonalLogin(): Promise<AuthResult> {
+export async function personalEmailLogin(): Promise<AuthResult> {
   await waitForMock();
 
   return {
     ok: true,
     redirectTo: "/dashboard",
     message: "Bem-vindo de volta. Redirecionando para o painel.",
+    token: "mock-access-token-personal-email",
+    user: {
+      id: "user_personal_email",
+      email: "personal@nodus.fit",
+      name: "Marcos Pereira",
+      role: "personal",
+      personalId: "personal_marcos",
+      emailVerified: true,
+    },
+    authMethod: "email",
+    backendContract: {
+      endpoint: "POST /api/auth/sign-in/email",
+      refreshToken: "httpOnly-cookie",
+      additionalFields: { role: "personal" },
+    },
   };
 }
 
-export async function mockPersonalRegister(email: string): Promise<AuthResult> {
+export async function personalGoogleLogin(): Promise<AuthResult> {
+  await waitForMock();
+
+  return {
+    ok: true,
+    redirectTo: "/dashboard",
+    message: "Google confirmado. Redirecionando para o painel.",
+    token: "mock-access-token-personal-google",
+    user: {
+      id: "user_personal_google",
+      email: "marcos.google@nodus.fit",
+      name: "Marcos Pereira",
+      image: "https://api.dicebear.com/9.x/initials/svg?seed=Marcos%20Pereira",
+      role: "personal",
+      personalId: "personal_marcos",
+      emailVerified: true,
+    },
+    authMethod: "google",
+    backendContract: {
+      endpoint: "GET /api/auth/sign-in/social/google",
+      refreshToken: "httpOnly-cookie",
+      additionalFields: { role: "personal" },
+    },
+  };
+}
+
+export async function personalEmailRegister(email: string): Promise<AuthResult> {
   await waitForMock();
 
   if (duplicatePersonalEmails.has(email.trim().toLowerCase())) {
@@ -84,17 +151,79 @@ export async function mockPersonalRegister(email: string): Promise<AuthResult> {
   return {
     ok: true,
     redirectTo: "/onboarding",
-    message: "Conta criada. Redirecionando para o onboarding.",
+    message:
+      "Conta criada. Enviamos o email de verificacao; convites e financeiro ficam bloqueados ate validar.",
+    token: "mock-access-token-personal-register",
+    user: {
+      id: "user_personal_new",
+      email,
+      name: "Novo Personal",
+      role: "personal",
+      personalId: "personal_new",
+      emailVerified: false,
+    },
+    authMethod: "email",
+    emailVerificationSent: true,
+    featuresLockedUntilEmailVerified: lockedPersonalFeatures,
+    backendContract: {
+      endpoint: "POST /api/auth/sign-up/email",
+      refreshToken: "httpOnly-cookie",
+      additionalFields: { role: "personal" },
+    },
   };
 }
 
-export async function mockPersonalGoogleRegister(): Promise<AuthResult> {
+export async function personalGoogleStart(): Promise<AuthResult> {
+  await waitForMock();
+
+  return {
+    ok: true,
+    redirectTo: "/acesso?oauth=google-callback",
+    message:
+      "Google conectado. Nome e avatar preenchidos; complete CREF e especialidade.",
+    token: "mock-google-callback-token",
+    user: {
+      id: "user_google_callback",
+      email: "marcos.google@nodus.fit",
+      name: "Marcos Pereira",
+      image: "https://api.dicebear.com/9.x/initials/svg?seed=Marcos%20Pereira",
+      role: "personal",
+      personalId: "personal_google_pending",
+      emailVerified: true,
+    },
+    authMethod: "google",
+    backendContract: {
+      endpoint: "GET /api/auth/sign-in/social/google",
+      refreshToken: "httpOnly-cookie",
+      additionalFields: { role: "personal" },
+    },
+  };
+}
+
+export async function personalGoogleCompleteProfile(): Promise<AuthResult> {
   await waitForMock();
 
   return {
     ok: true,
     redirectTo: "/onboarding",
-    message: "Conta Google conectada. Finalize seu onboarding profissional.",
+    message:
+      "Perfil profissional atualizado com CREF e especialidade. Indo para o onboarding.",
+    token: "mock-access-token-personal-google-complete",
+    user: {
+      id: "user_google_callback",
+      email: "marcos.google@nodus.fit",
+      name: "Marcos Pereira",
+      image: "https://api.dicebear.com/9.x/initials/svg?seed=Marcos%20Pereira",
+      role: "personal",
+      personalId: "personal_google_pending",
+      emailVerified: true,
+    },
+    authMethod: "google",
+    backendContract: {
+      endpoint: "PATCH /api/me/personal-profile",
+      refreshToken: "httpOnly-cookie",
+      additionalFields: { role: "personal" },
+    },
   };
 }
 
@@ -105,6 +234,20 @@ export async function mockStudentLogin(): Promise<AuthResult> {
     ok: true,
     redirectTo: "/aluno/treino",
     message: "Login confirmado. Carregando o treino de hoje.",
+    token: "mock-access-token-student-email",
+    user: {
+      id: "user_student_email",
+      email: "aluno@nodus.fit",
+      name: "Ana Costa",
+      role: "aluno",
+      personalId: "personal_marcos",
+      emailVerified: true,
+    },
+    authMethod: "email",
+    backendContract: {
+      endpoint: "POST /api/auth/sign-in/email",
+      refreshToken: "httpOnly-cookie",
+    },
   };
 }
 
@@ -122,6 +265,20 @@ export async function mockStudentRegister(invite: InviteValidation): Promise<Aut
     ok: true,
     redirectTo: "/aluno/treino",
     message: "Conta criada. Seu treino ja esta pronto.",
+    token: "mock-access-token-student-register",
+    user: {
+      id: "user_student_invite",
+      email: "aluno.convidado@nodus.fit",
+      name: "Aluno Convidado",
+      role: "aluno",
+      personalId: "personal_marcos",
+      emailVerified: true,
+    },
+    authMethod: "email",
+    backendContract: {
+      endpoint: "POST /api/auth/sign-up/email",
+      refreshToken: "httpOnly-cookie",
+    },
   };
 }
 
