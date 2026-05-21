@@ -101,6 +101,9 @@ const specialties = [
 // TEMP VOR-70 preview flag: keep Personal signup unrestricted/visible while the
 // auth contracts are still mocked and the UI is being reviewed manually.
 const TEMP_PERSONAL_REGISTER_PREVIEW = true;
+// TEMP VOR-70 preview flag: allow Student signup UI without a valid invite so
+// the registration screen can be reviewed before backend invite wiring lands.
+const TEMP_STUDENT_REGISTER_PREVIEW = true;
 
 export function AccessAuthClient({ initialRole, invite, token }: AccessAuthClientProps) {
   const rootRef = useRef<HTMLDivElement>(null);
@@ -127,7 +130,7 @@ export function AccessAuthClient({ initialRole, invite, token }: AccessAuthClien
     () => getPasswordStrength(studentForm.password),
     [studentForm.password],
   );
-  const canRegisterStudent = invite.status === "valid";
+  const canRegisterStudent = invite.status === "valid" || TEMP_STUDENT_REGISTER_PREVIEW;
   const activeTab = activeRole === "personal" ? personalTab : studentTab;
   const tone = activeRole === "personal" ? "dark" : "light";
 
@@ -266,14 +269,31 @@ export function AccessAuthClient({ initialRole, invite, token }: AccessAuthClien
   }
 
   async function submitStudentRegister() {
-    const errors = validateStudentRegister(studentForm);
+    const errors = TEMP_STUDENT_REGISTER_PREVIEW
+      ? {}
+      : validateStudentRegister(studentForm);
 
     if (Object.keys(errors).length > 0) {
       setFieldErrors(errors);
       return;
     }
 
-    await submit("student-register", () => mockStudentRegister(invite));
+    await submit("student-register", () =>
+      mockStudentRegister(
+        TEMP_STUDENT_REGISTER_PREVIEW && invite.status !== "valid"
+          ? {
+              status: "valid",
+              personal: {
+                name: "Marcos Pereira",
+                initials: "MP",
+                title: "Personal Trainer",
+                city: "Sao Paulo",
+                students: 32,
+              },
+            }
+          : invite,
+      ),
+    );
   }
 
   async function submit(
@@ -1053,6 +1073,20 @@ function InviteHint({
           <small>
             {invite.personal.city} · {invite.personal.students} alunos ativos
           </small>
+        </div>
+        <IconCheck aria-hidden="true" />
+      </div>
+    );
+  }
+
+  if (TEMP_STUDENT_REGISTER_PREVIEW) {
+    return (
+      <div className={`invite-badge light ${expanded ? "expanded" : ""}`} data-r="up">
+        <div className="invite-avatar">MP</div>
+        <div>
+          <span>Preview liberado</span>
+          <strong>Marcos Pereira - Personal Trainer</strong>
+          <small>Convite temporario para revisar o cadastro do aluno</small>
         </div>
         <IconCheck aria-hidden="true" />
       </div>
