@@ -2507,7 +2507,8 @@ select {
   --auth-light-muted: #1c5247;
   --auth-red: #e05050;
   min-height: 100dvh;
-  overflow: hidden;
+  overflow-x: hidden;
+  overflow-y: auto;
   background: var(--auth-bg);
   color: var(--auth-t1);
   font-family: var(--font-manrope), system-ui, sans-serif;
@@ -3440,14 +3441,15 @@ select {
 .auth-visual-panel {
   position: relative;
   min-width: 0;
-  overflow: hidden;
+  overflow-x: hidden;
 }
 
 .auth-form-panel {
   display: flex;
   min-height: 100dvh;
-  align-items: center;
+  align-items: flex-start;
   justify-content: center;
+  overflow-y: auto;
   padding: 40px;
   transition:
     background 0.5s ease,
@@ -3472,6 +3474,7 @@ select {
   position: relative;
   z-index: 1;
   width: min(100%, 510px);
+  margin-block: auto;
 }
 
 .auth-vor70[data-role="aluno"] .auth-form-panel {
@@ -3483,6 +3486,7 @@ select {
   min-height: 100dvh;
   align-items: center;
   justify-content: center;
+  overflow: hidden;
   padding: 56px;
   color: #ffffff;
   isolation: isolate;
@@ -3942,6 +3946,7 @@ select {
 
   .auth-form-panel {
     min-height: auto;
+    overflow: visible;
     padding: 30px 24px 44px;
   }
 
