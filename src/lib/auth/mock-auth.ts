@@ -342,6 +342,31 @@ export async function mockStudentLogin(): Promise<AuthResult> {
   };
 }
 
+export async function mockStudentGoogleLogin(): Promise<AuthResult> {
+  await waitForMock();
+
+  return {
+    ok: true,
+    redirectTo: "/aluno/treino",
+    message: "Google confirmado. Carregando o treino de hoje.",
+    token: "mock-access-token-student-google",
+    user: {
+      id: "user_student_google",
+      email: "ana.google@nodus.fit",
+      name: "Ana Costa",
+      image: "https://api.dicebear.com/9.x/initials/svg?seed=Ana%20Costa",
+      role: "aluno",
+      personalId: "personal_marcos",
+      emailVerified: true,
+    },
+    authMethod: "google",
+    backendContract: {
+      endpoint: "GET /api/auth/sign-in/social/google",
+      refreshToken: "httpOnly-cookie",
+    },
+  };
+}
+
 export async function mockStudentRegister(invite: InviteValidation): Promise<AuthResult> {
   await waitForMock();
 
@@ -368,6 +393,40 @@ export async function mockStudentRegister(invite: InviteValidation): Promise<Aut
     authMethod: "email",
     backendContract: {
       endpoint: "POST /api/auth/sign-up/email",
+      refreshToken: "httpOnly-cookie",
+    },
+  };
+}
+
+export async function mockStudentGoogleRegister(
+  invite: InviteValidation,
+): Promise<AuthResult> {
+  await waitForMock();
+
+  if (invite.status !== "valid") {
+    return {
+      ok: false,
+      message: "Convite invalido ou expirado. Solicite um novo link ao seu personal.",
+    };
+  }
+
+  return {
+    ok: true,
+    redirectTo: "/aluno/treino",
+    message: "Conta Google criada pelo convite. Seu treino ja esta pronto.",
+    token: "mock-access-token-student-google-register",
+    user: {
+      id: "user_student_google_invite",
+      email: "ana.google@nodus.fit",
+      name: "Ana Costa",
+      image: "https://api.dicebear.com/9.x/initials/svg?seed=Ana%20Costa",
+      role: "aluno",
+      personalId: "personal_marcos",
+      emailVerified: true,
+    },
+    authMethod: "google",
+    backendContract: {
+      endpoint: "GET /api/auth/sign-in/social/google",
       refreshToken: "httpOnly-cookie",
     },
   };

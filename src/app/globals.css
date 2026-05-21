@@ -3196,7 +3196,19 @@ select {
   background: var(--auth-light-bd);
 }
 
-.password-strength span.active {
+.password-strength.score-1 span.active {
+  background: #e05050;
+}
+
+.password-strength.score-2 span.active {
+  background: #e7a23c;
+}
+
+.password-strength.score-3 span.active {
+  background: #d8d256;
+}
+
+.password-strength.score-4 span.active {
   background: var(--auth-mint);
 }
 
@@ -3213,6 +3225,22 @@ select {
 
 .password-strength.light small {
   color: rgb(28 82 71 / 0.68);
+}
+
+.password-strength.score-1 small {
+  color: #e05050;
+}
+
+.password-strength.score-2 small {
+  color: #d88928;
+}
+
+.password-strength.score-3 small {
+  color: #9f9a21;
+}
+
+.password-strength.score-4 small {
+  color: var(--auth-mint-dark);
 }
 
 .invite-badge {

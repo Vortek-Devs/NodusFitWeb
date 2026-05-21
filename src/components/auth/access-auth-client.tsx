@@ -25,6 +25,8 @@ import {
   type AuthRole,
   type AuthUser,
   type InviteValidation,
+  mockStudentGoogleLogin,
+  mockStudentGoogleRegister,
   mockStudentLogin,
   mockStudentRegister,
   personalEmailLogin,
@@ -48,6 +50,8 @@ type SubmitTarget =
   | "personal-google-profile"
   | "personal-register"
   | "student-login"
+  | "student-google-login"
+  | "student-google-register"
   | "student-register";
 type SubmitResult = {
   target: SubmitTarget;
@@ -268,6 +272,16 @@ export function AccessAuthClient({ initialRole, invite, token }: AccessAuthClien
     await submit("student-login", () => mockStudentLogin());
   }
 
+  async function submitStudentGoogleLogin() {
+    await submit("student-google-login", () => mockStudentGoogleLogin());
+  }
+
+  async function submitStudentGoogleRegister() {
+    await submit("student-google-register", () =>
+      mockStudentGoogleRegister(getStudentInviteForPreview(invite)),
+    );
+  }
+
   async function submitStudentRegister() {
     const errors = TEMP_STUDENT_REGISTER_PREVIEW
       ? {}
@@ -279,20 +293,7 @@ export function AccessAuthClient({ initialRole, invite, token }: AccessAuthClien
     }
 
     await submit("student-register", () =>
-      mockStudentRegister(
-        TEMP_STUDENT_REGISTER_PREVIEW && invite.status !== "valid"
-          ? {
-              status: "valid",
-              personal: {
-                name: "Marcos Pereira",
-                initials: "MP",
-                title: "Personal Trainer",
-                city: "Sao Paulo",
-                students: 32,
-              },
-            }
-          : invite,
-      ),
+      mockStudentRegister(getStudentInviteForPreview(invite)),
     );
   }
 
@@ -365,6 +366,8 @@ export function AccessAuthClient({ initialRole, invite, token }: AccessAuthClien
                 fieldErrors={fieldErrors}
                 form={studentForm}
                 invite={invite}
+                onGoogleLogin={submitStudentGoogleLogin}
+                onGoogleRegister={submitStudentGoogleRegister}
                 onLogin={submitStudentLogin}
                 onRegister={submitStudentRegister}
                 onUpdate={setStudentField}
@@ -873,6 +876,8 @@ function StudentForms({
   fieldErrors,
   form,
   invite,
+  onGoogleLogin,
+  onGoogleRegister,
   onLogin,
   onRegister,
   onUpdate,
@@ -887,6 +892,8 @@ function StudentForms({
   fieldErrors: Record<string, string>;
   form: StudentForm;
   invite: InviteValidation;
+  onGoogleLogin: () => Promise<void>;
+  onGoogleRegister: () => Promise<void>;
   onLogin: () => Promise<void>;
   onRegister: () => Promise<void>;
   onUpdate: <Key extends keyof StudentForm>(key: Key, value: StudentForm[Key]) => void;
@@ -900,6 +907,13 @@ function StudentForms({
   if (tab === "login") {
     return (
       <form className="auth-form" action={onLogin}>
+        <GoogleButton
+          disabled={submitting === "student-google-login"}
+          label="Entrar com Google"
+          loadingLabel="Entrando com Google"
+          onClick={onGoogleLogin}
+        />
+        <Divider label="ou entre com email" tone="light" />
         <AuthField
           tone="light"
           id="student-login-email"
@@ -935,6 +949,13 @@ function StudentForms({
   return (
     <div className="auth-form">
       <InviteHint invite={invite} token={token} expanded />
+      <GoogleButton
+        disabled={!canRegisterStudent || submitting === "student-google-register"}
+        label="Entrar com Google"
+        loadingLabel="Conectando com Google"
+        onClick={onGoogleRegister}
+      />
+      <Divider label="ou crie com email" tone="light" />
       <form action={onRegister} className="auth-step">
         <ControlledField
           tone="light"
@@ -1331,7 +1352,10 @@ function PasswordStrength({
   tone: "dark" | "light";
 }) {
   return (
-    <div className={`password-strength ${tone}`} aria-live="polite">
+    <div
+      className={`password-strength ${tone} score-${strength.score}`}
+      aria-live="polite"
+    >
       <div>
         {[1, 2, 3, 4].map((bar) => (
           <span
@@ -1622,6 +1646,23 @@ function validateStudentRegister(form: StudentForm) {
   }
 
   return errors;
+}
+
+function getStudentInviteForPreview(invite: InviteValidation): InviteValidation {
+  if (!TEMP_STUDENT_REGISTER_PREVIEW || invite.status === "valid") {
+    return invite;
+  }
+
+  return {
+    status: "valid",
+    personal: {
+      name: "Marcos Pereira",
+      initials: "MP",
+      title: "Personal Trainer",
+      city: "Sao Paulo",
+      students: 32,
+    },
+  };
 }
 
 function isEmail(value: string) {
