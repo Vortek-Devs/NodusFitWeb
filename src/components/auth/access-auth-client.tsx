@@ -98,6 +98,10 @@ const specialties = [
   "Funcional",
 ];
 
+// TEMP VOR-70 preview flag: keep Personal signup unrestricted/visible while the
+// auth contracts are still mocked and the UI is being reviewed manually.
+const TEMP_PERSONAL_REGISTER_PREVIEW = true;
+
 export function AccessAuthClient({ initialRole, invite, token }: AccessAuthClientProps) {
   const rootRef = useRef<HTMLDivElement>(null);
   const [activeRole, setActiveRole] = useState<AuthRole>(initialRole);
@@ -177,6 +181,12 @@ export function AccessAuthClient({ initialRole, invite, token }: AccessAuthClien
   }
 
   function nextPersonalStep() {
+    if (TEMP_PERSONAL_REGISTER_PREVIEW) {
+      setFieldErrors({});
+      setPersonalStep((step) => Math.min(step + 1, 3));
+      return;
+    }
+
     const errors = validatePersonalStep(personalStep, personalRegister);
 
     if (Object.keys(errors).length > 0) {
@@ -211,7 +221,9 @@ export function AccessAuthClient({ initialRole, invite, token }: AccessAuthClien
   }
 
   async function submitPersonalRegister() {
-    const errors = validatePersonalStep(3, personalRegister);
+    const errors = TEMP_PERSONAL_REGISTER_PREVIEW
+      ? {}
+      : validatePersonalStep(3, personalRegister);
 
     if (Object.keys(errors).length > 0) {
       setFieldErrors(errors);
@@ -232,7 +244,9 @@ export function AccessAuthClient({ initialRole, invite, token }: AccessAuthClien
   }
 
   async function submitGoogleProfile() {
-    const errors = validatePersonalStep(2, personalRegister);
+    const errors = TEMP_PERSONAL_REGISTER_PREVIEW
+      ? {}
+      : validatePersonalStep(2, personalRegister);
 
     if (Object.keys(errors).length > 0) {
       setFieldErrors(errors);
@@ -638,6 +652,7 @@ function PersonalForms({
   visiblePasswords: Record<string, boolean>;
 }) {
   const isGoogleRegister = Boolean(googlePersonal);
+  const authStepClass = TEMP_PERSONAL_REGISTER_PREVIEW ? "auth-step in" : "auth-step";
 
   if (tab === "login") {
     return (
@@ -689,7 +704,7 @@ function PersonalForms({
       )}
 
       {personalStep === 1 && !isGoogleRegister ? (
-        <div className="auth-step" data-r="up">
+        <div className={authStepClass} data-r="up">
           <GoogleButton
             disabled={submitting === "personal-google-register"}
             label="Entrar com Google"
@@ -753,7 +768,7 @@ function PersonalForms({
       ) : null}
 
       {personalStep === 2 ? (
-        <div className="auth-step" data-r="up">
+        <div className={authStepClass} data-r="up">
           <ControlledField
             tone="dark"
             id="personal-cref"
@@ -795,7 +810,7 @@ function PersonalForms({
       ) : null}
 
       {personalStep === 3 ? (
-        <div className="auth-step" data-r="up">
+        <div className={authStepClass} data-r="up">
           <ControlledPasswordField
             tone="dark"
             id="personal-register-password"
