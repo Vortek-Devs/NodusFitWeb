@@ -219,7 +219,15 @@ export function AccessAuthClient({ initialRole, invite, token }: AccessAuthClien
     }
 
     await submit("personal-register", () =>
-      personalEmailRegister(personalRegister.email),
+      personalEmailRegister({
+        firstName: personalRegister.firstName,
+        lastName: personalRegister.lastName,
+        email: personalRegister.email,
+        whatsapp: personalRegister.whatsapp,
+        cref: personalRegister.cref,
+        specialty: personalRegister.specialty,
+        password: personalRegister.password,
+      }),
     );
   }
 
@@ -231,7 +239,12 @@ export function AccessAuthClient({ initialRole, invite, token }: AccessAuthClien
       return;
     }
 
-    await submit("personal-google-profile", () => personalGoogleCompleteProfile());
+    await submit("personal-google-profile", () =>
+      personalGoogleCompleteProfile({
+        cref: personalRegister.cref,
+        specialty: personalRegister.specialty,
+      }),
+    );
   }
 
   async function submitStudentLogin() {
@@ -1389,6 +1402,24 @@ function PanelResult({ result, role }: { result: SubmitResult | null; role: Auth
             <small>
               Email de verificacao enviado. Bloqueado ate validar:{" "}
               {result.response.featuresLockedUntilEmailVerified?.join(", ")}.
+            </small>
+          ) : null}
+          {result.response.profileProvisioning ? (
+            <small>
+              Trigger: {result.response.profileProvisioning.trigger} /
+              general_profile.phone:{" "}
+              {result.response.profileProvisioning.generalProfile.phone ?? "pendente"} /
+              personal_profile.specialty:{" "}
+              {result.response.profileProvisioning.personalProfileUpdate?.fields
+                .specialty ??
+                result.response.profileProvisioning.personalProfile.specialty ??
+                "pendente"}
+            </small>
+          ) : null}
+          {result.response.meContract ? (
+            <small>
+              Perfil complementar: {result.response.meContract.endpoint} com{" "}
+              {result.response.meContract.authorization}.
             </small>
           ) : null}
         </>

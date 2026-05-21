@@ -23,6 +23,50 @@ export type AuthUser = {
   emailVerified: boolean;
 };
 
+export type PersonalEmailRegisterPayload = {
+  firstName: string;
+  lastName: string;
+  email: string;
+  whatsapp: string;
+  cref: string;
+  specialty: string;
+  password: string;
+};
+
+export type PersonalGoogleProfilePayload = {
+  cref: string;
+  specialty: string;
+};
+
+export type GeneralProfile = {
+  userId: string;
+  phone: string | null;
+  birthdate: string | null;
+  bio: string | null;
+};
+
+export type PersonalProfile = {
+  id: string;
+  userId: string;
+  brandColor: "#3DD9A4";
+  cref: string | null;
+  specialty: string | null;
+};
+
+export type ProfileProvisioning = {
+  userInsert: {
+    role: AuthRole;
+    personalId: null;
+  };
+  trigger: "trg_user_created";
+  generalProfile: GeneralProfile;
+  personalProfile: PersonalProfile;
+  personalProfileUpdate?: {
+    endpoint: "PATCH /api/me/personal-profile";
+    fields: Pick<PersonalProfile, "brandColor" | "cref" | "specialty">;
+  };
+};
+
 // BetterAuth will rotate refresh tokens through httpOnly cookies. The client contract
 // intentionally exposes only short-lived access-token shaped data for mocks.
 export type AuthResult =
@@ -35,6 +79,12 @@ export type AuthResult =
       authMethod: "email" | "google";
       emailVerificationSent?: boolean;
       featuresLockedUntilEmailVerified?: string[];
+      profileProvisioning?: ProfileProvisioning;
+      meContract?: {
+        endpoint: "GET /api/me";
+        authorization: "Bearer <token>";
+        includes: ["user", "general_profile", "personal_profile"];
+      };
       backendContract: {
         endpoint: string;
         refreshToken: "httpOnly-cookie";
@@ -137,10 +187,12 @@ export async function personalGoogleLogin(): Promise<AuthResult> {
   };
 }
 
-export async function personalEmailRegister(email: string): Promise<AuthResult> {
+export async function personalEmailRegister(
+  payload: PersonalEmailRegisterPayload,
+): Promise<AuthResult> {
   await waitForMock();
 
-  if (duplicatePersonalEmails.has(email.trim().toLowerCase())) {
+  if (duplicatePersonalEmails.has(payload.email.trim().toLowerCase())) {
     return {
       ok: false,
       field: "email",
@@ -156,8 +208,8 @@ export async function personalEmailRegister(email: string): Promise<AuthResult> 
     token: "mock-access-token-personal-register",
     user: {
       id: "user_personal_new",
-      email,
-      name: "Novo Personal",
+      email: payload.email,
+      name: `${payload.firstName.trim()} ${payload.lastName.trim()}`.trim(),
       role: "personal",
       personalId: "personal_new",
       emailVerified: false,
@@ -165,6 +217,15 @@ export async function personalEmailRegister(email: string): Promise<AuthResult> 
     authMethod: "email",
     emailVerificationSent: true,
     featuresLockedUntilEmailVerified: lockedPersonalFeatures,
+    profileProvisioning: buildPersonalProvisioning({
+      brandColor: "#3DD9A4",
+      cref: payload.cref || null,
+      phone: payload.whatsapp,
+      personalId: "personal_new",
+      specialty: payload.specialty,
+      userId: "user_personal_new",
+    }),
+    meContract: buildMeContract(),
     backendContract: {
       endpoint: "POST /api/auth/sign-up/email",
       refreshToken: "httpOnly-cookie",
@@ -192,6 +253,15 @@ export async function personalGoogleStart(): Promise<AuthResult> {
       emailVerified: true,
     },
     authMethod: "google",
+    profileProvisioning: buildPersonalProvisioning({
+      brandColor: "#3DD9A4",
+      cref: null,
+      phone: null,
+      personalId: "personal_google_pending",
+      specialty: null,
+      userId: "user_google_callback",
+    }),
+    meContract: buildMeContract(),
     backendContract: {
       endpoint: "GET /api/auth/sign-in/social/google",
       refreshToken: "httpOnly-cookie",
@@ -200,7 +270,9 @@ export async function personalGoogleStart(): Promise<AuthResult> {
   };
 }
 
-export async function personalGoogleCompleteProfile(): Promise<AuthResult> {
+export async function personalGoogleCompleteProfile(
+  payload: PersonalGoogleProfilePayload,
+): Promise<AuthResult> {
   await waitForMock();
 
   return {
@@ -219,6 +291,25 @@ export async function personalGoogleCompleteProfile(): Promise<AuthResult> {
       emailVerified: true,
     },
     authMethod: "google",
+    profileProvisioning: {
+      ...buildPersonalProvisioning({
+        brandColor: "#3DD9A4",
+        cref: null,
+        phone: null,
+        personalId: "personal_google_pending",
+        specialty: null,
+        userId: "user_google_callback",
+      }),
+      personalProfileUpdate: {
+        endpoint: "PATCH /api/me/personal-profile",
+        fields: {
+          brandColor: "#3DD9A4",
+          cref: payload.cref || null,
+          specialty: payload.specialty,
+        },
+      },
+    },
+    meContract: buildMeContract(),
     backendContract: {
       endpoint: "PATCH /api/me/personal-profile",
       refreshToken: "httpOnly-cookie",
@@ -284,4 +375,49 @@ export async function mockStudentRegister(invite: InviteValidation): Promise<Aut
 
 function waitForMock() {
   return new Promise((resolve) => window.setTimeout(resolve, 650));
+}
+
+function buildPersonalProvisioning({
+  brandColor,
+  cref,
+  personalId,
+  phone,
+  specialty,
+  userId,
+}: {
+  brandColor: "#3DD9A4";
+  cref: string | null;
+  personalId: string;
+  phone: string | null;
+  specialty: string | null;
+  userId: string;
+}): ProfileProvisioning {
+  return {
+    userInsert: {
+      role: "personal",
+      personalId: null,
+    },
+    trigger: "trg_user_created",
+    generalProfile: {
+      userId,
+      phone,
+      birthdate: null,
+      bio: null,
+    },
+    personalProfile: {
+      id: personalId,
+      userId,
+      brandColor,
+      cref,
+      specialty,
+    },
+  };
+}
+
+function buildMeContract(): NonNullable<Extract<AuthResult, { ok: true }>["meContract"]> {
+  return {
+    endpoint: "GET /api/me",
+    authorization: "Bearer <token>",
+    includes: ["user", "general_profile", "personal_profile"],
+  };
 }
