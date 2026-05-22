@@ -1,3 +1,5 @@
+"use client";
+
 import {
   IconAlertCircle,
   IconAlertTriangle,
@@ -19,6 +21,7 @@ import {
   IconX,
 } from "@tabler/icons-react";
 import type { ComponentType } from "react";
+import { useState } from "react";
 import {
   PersonalPreviewPage,
   PersonalPreviewShell,
@@ -32,6 +35,8 @@ type FinancePreviewVariant =
   | "loaded"
   | "loading"
   | "payment";
+
+type FinanceOverlay = Extract<FinancePreviewVariant, "config" | "drawer" | "payment">;
 
 interface IconProps {
   "aria-hidden"?: boolean | "true" | "false";
@@ -165,30 +170,64 @@ export function FinancialPreview({
 }: {
   variant?: FinancePreviewVariant;
 }) {
-  const showDrawer = variant === "drawer";
-  const showPayment = variant === "payment";
-  const showConfig = variant === "config";
+  const [overlay, setOverlay] = useState<FinanceOverlay | null>(null);
+  const activeOverlay = overlay ?? (isOverlayVariant(variant) ? variant : null);
+  const closeOverlay = () => {
+    if (overlay) {
+      setOverlay(null);
+      return;
+    }
+
+    window.location.href = "/financeiro";
+  };
 
   return (
     <PersonalPreviewShell active="financeiro">
-      <PersonalPreviewPage topbar={<FinanceTopbar />}>
+      <PersonalPreviewPage
+        topbar={
+          <FinanceTopbar
+            openConfig={() => setOverlay("config")}
+            openDrawer={() => setOverlay("drawer")}
+          />
+        }
+      >
         {variant === "loading" ? (
           <FinanceLoadingState />
         ) : variant === "empty" ? (
-          <FinanceEmptyState />
+          <FinanceEmptyState openConfig={() => setOverlay("config")} />
         ) : (
-          <FinanceLoadedState />
+          <FinanceLoadedState
+            openConfig={() => setOverlay("config")}
+            openDrawer={() => setOverlay("drawer")}
+            openPayment={() => setOverlay("payment")}
+          />
         )}
       </PersonalPreviewPage>
 
-      {showDrawer ? <FinanceDrawer /> : null}
-      {showPayment ? <PaymentModal /> : null}
-      {showConfig ? <ConfigModal /> : null}
+      {activeOverlay === "drawer" ? (
+        <FinanceDrawer
+          onClose={closeOverlay}
+          openConfig={() => setOverlay("config")}
+          openPayment={() => setOverlay("payment")}
+        />
+      ) : null}
+      {activeOverlay === "payment" ? <PaymentModal onClose={closeOverlay} /> : null}
+      {activeOverlay === "config" ? <ConfigModal onClose={closeOverlay} /> : null}
     </PersonalPreviewShell>
   );
 }
 
-function FinanceTopbar() {
+function isOverlayVariant(variant: FinancePreviewVariant): variant is FinanceOverlay {
+  return variant === "drawer" || variant === "payment" || variant === "config";
+}
+
+function FinanceTopbar({
+  openConfig,
+  openDrawer,
+}: {
+  openConfig: () => void;
+  openDrawer: () => void;
+}) {
   return (
     <PersonalPreviewTopbar>
       <div className="flex flex-col gap-3 md:flex-row md:items-center md:justify-between">
@@ -221,11 +260,11 @@ function FinanceTopbar() {
         </div>
 
         <div className="flex flex-wrap gap-2">
-          <ActionLink href="/financeiro/drawer" icon={IconHistory} label="Historico" />
+          <ActionLink icon={IconHistory} label="Historico" onClick={openDrawer} />
           <ActionLink
-            href="/financeiro/config"
             icon={IconPlus}
             label="Configurar mensalidade"
+            onClick={openConfig}
             primary
           />
         </div>
@@ -264,19 +303,27 @@ function FinanceStateNav() {
   );
 }
 
-function FinanceLoadedState() {
+function FinanceLoadedState({
+  openConfig,
+  openDrawer,
+  openPayment,
+}: {
+  openConfig: () => void;
+  openDrawer: () => void;
+  openPayment: () => void;
+}) {
   return (
     <div className="space-y-6">
-      <AlertBanner />
+      <AlertBanner openPayment={openPayment} />
       <SummaryGrid />
-      <GoalBar />
+      <GoalBar openConfig={openConfig} />
       <FinanceControls />
-      <StudentGroups />
+      <StudentGroups openDrawer={openDrawer} openPayment={openPayment} />
     </div>
   );
 }
 
-function AlertBanner() {
+function AlertBanner({ openPayment }: { openPayment: () => void }) {
   return (
     <section className="flex gap-4 rounded-2xl border border-[#E05050]/20 bg-[#E05050]/10 p-4">
       <IconAlertCircle
@@ -292,12 +339,13 @@ function AlertBanner() {
           Rafael F. esta ha 8 dias em atraso e Ana K. esta ha 3 dias. Registre os
           pagamentos ou envie um lembrete.
         </p>
-        <a
+        <button
           className="mt-2 inline-flex text-xs font-bold text-[#E05050]"
-          href="/financeiro/pagamento"
+          type="button"
+          onClick={openPayment}
         >
           Ver inadimplentes
-        </a>
+        </button>
       </div>
       <IconX aria-hidden="true" className="shrink-0 text-[#4A7868]" size={18} />
     </section>
@@ -357,7 +405,7 @@ function SummaryCard({
   );
 }
 
-function GoalBar() {
+function GoalBar({ openConfig }: { openConfig: () => void }) {
   return (
     <section className="rounded-2xl border border-[#1C3529] bg-[#0D1A15] p-5">
       <div className="flex flex-col gap-4 md:flex-row md:items-center">
@@ -373,13 +421,14 @@ function GoalBar() {
             Faltam R$570 para atingir a meta. Restam 9 dias no mes.
           </p>
         </div>
-        <a
+        <button
           className="grid size-10 place-items-center rounded-xl border border-[#233F31] bg-[#122019] text-[#89BBAA]"
-          href="/financeiro/config"
+          type="button"
           aria-label="Editar meta mensal"
+          onClick={openConfig}
         >
           <IconPencil aria-hidden="true" size={18} />
-        </a>
+        </button>
       </div>
     </section>
   );
@@ -419,7 +468,13 @@ function FinanceControls() {
   );
 }
 
-function StudentGroups() {
+function StudentGroups({
+  openDrawer,
+  openPayment,
+}: {
+  openDrawer: () => void;
+  openPayment: () => void;
+}) {
   return (
     <section className="space-y-6">
       {studentGroups.map((group) => (
@@ -438,6 +493,8 @@ function StudentGroups() {
               <StudentPaymentRow
                 groupTone={group.tone}
                 key={student.name}
+                openDrawer={openDrawer}
+                openPayment={openPayment}
                 student={student}
               />
             ))}
@@ -450,9 +507,13 @@ function StudentGroups() {
 
 function StudentPaymentRow({
   groupTone,
+  openDrawer,
+  openPayment,
   student,
 }: {
   groupTone: string;
+  openDrawer: () => void;
+  openPayment: () => void;
   student: (typeof studentGroups)[number]["students"][number];
 }) {
   const isOverdue = groupTone === "red";
@@ -482,13 +543,14 @@ function StudentPaymentRow({
         </p>
       </div>
       <StatusPill tone={groupTone}>{student.status}</StatusPill>
-      <a
+      <button
         className={`inline-flex items-center justify-center gap-2 rounded-xl border px-3 py-2 text-xs font-bold ${
           isOverdue
             ? "border-[#E05050]/25 bg-[#E05050]/10 text-[#E05050]"
             : "border-[#233F31] bg-[#122019] text-[#89BBAA]"
         }`}
-        href={isOverdue || isWarning ? "/financeiro/pagamento" : "/financeiro/drawer"}
+        type="button"
+        onClick={isOverdue || isWarning ? openPayment : openDrawer}
       >
         {student.action === "Historico" ? (
           <IconHistory aria-hidden="true" size={15} />
@@ -496,7 +558,7 @@ function StudentPaymentRow({
           <IconCheck aria-hidden="true" size={15} />
         )}
         {student.action}
-      </a>
+      </button>
     </article>
   );
 }
@@ -536,7 +598,7 @@ function FinanceLoadingState() {
   );
 }
 
-function FinanceEmptyState() {
+function FinanceEmptyState({ openConfig }: { openConfig: () => void }) {
   return (
     <section className="grid min-h-[520px] place-items-center rounded-3xl border border-dashed border-[#233F31] bg-[#0D1A15]/70 p-8 text-center">
       <div className="max-w-md">
@@ -550,19 +612,28 @@ function FinanceEmptyState() {
           Configure o valor e a data de vencimento dos seus alunos para comecar a
           controlar as financas aqui.
         </p>
-        <a
+        <button
           className="mt-6 inline-flex items-center justify-center gap-2 rounded-xl bg-[#3DD9A4] px-5 py-3 text-sm font-bold text-[#04342C]"
-          href="/financeiro/config"
+          type="button"
+          onClick={openConfig}
         >
           <IconPlus aria-hidden="true" size={18} />
           Configurar primeiro aluno
-        </a>
+        </button>
       </div>
     </section>
   );
 }
 
-function FinanceDrawer() {
+function FinanceDrawer({
+  onClose,
+  openConfig,
+  openPayment,
+}: {
+  onClose: () => void;
+  openConfig: () => void;
+  openPayment: () => void;
+}) {
   return (
     <>
       <div className="fixed inset-0 z-30 bg-black/55" />
@@ -574,13 +645,14 @@ function FinanceDrawer() {
             </h2>
             <p className="mt-1 text-xs text-[#4A7868]">Plano mensal - R$190/mes</p>
           </div>
-          <a
+          <button
             className="grid size-9 place-items-center rounded-xl border border-[#233F31] text-[#89BBAA]"
-            href="/financeiro"
+            type="button"
             aria-label="Fechar drawer"
+            onClick={onClose}
           >
             <IconX aria-hidden="true" size={18} />
-          </a>
+          </button>
         </div>
         <div className="flex-1 space-y-6 overflow-y-auto p-5">
           <InfoGrid />
@@ -591,15 +663,15 @@ function FinanceDrawer() {
             </h3>
             <div className="grid gap-2">
               <ActionLink
-                href="/financeiro/pagamento"
                 icon={IconCheck}
                 label="Registrar pagamento pendente"
+                onClick={openPayment}
                 primary
               />
               <ActionLink
-                href="/financeiro/config"
                 icon={IconSettings}
                 label="Editar mensalidade"
+                onClick={openConfig}
               />
             </div>
           </div>
@@ -654,9 +726,13 @@ function PaymentHistory() {
   );
 }
 
-function PaymentModal() {
+function PaymentModal({ onClose }: { onClose: () => void }) {
   return (
-    <ModalShell subtitle="Rafael Ferreira - R$190" title="Registrar pagamento">
+    <ModalShell
+      onClose={onClose}
+      subtitle="Rafael Ferreira - R$190"
+      title="Registrar pagamento"
+    >
       <div className="rounded-2xl border border-[#E05050]/20 bg-[#E05050]/10 p-4 sm:flex sm:items-center sm:gap-3">
         <Avatar initials="RF" tone="red" />
         <div className="mt-3 min-w-0 flex-1 sm:mt-0">
@@ -678,14 +754,19 @@ function PaymentModal() {
         label="Observacao opcional"
         value="Pagou com desconto combinado"
       />
-      <ModalFooter primaryIcon={IconCheck} primaryLabel="Confirmar pagamento" />
+      <ModalFooter
+        onClose={onClose}
+        primaryIcon={IconCheck}
+        primaryLabel="Confirmar pagamento"
+      />
     </ModalShell>
   );
 }
 
-function ConfigModal() {
+function ConfigModal({ onClose }: { onClose: () => void }) {
   return (
     <ModalShell
+      onClose={onClose}
       subtitle="Define valor e vencimento por aluno"
       title="Configurar mensalidade"
     >
@@ -705,17 +786,23 @@ function ConfigModal() {
         label="Observacao"
         value="Aluno tem desconto por indicacao"
       />
-      <ModalFooter primaryIcon={IconDeviceFloppy} primaryLabel="Salvar configuracao" />
+      <ModalFooter
+        onClose={onClose}
+        primaryIcon={IconDeviceFloppy}
+        primaryLabel="Salvar configuracao"
+      />
     </ModalShell>
   );
 }
 
 function ModalShell({
   children,
+  onClose,
   subtitle,
   title,
 }: {
   children: React.ReactNode;
+  onClose: () => void;
   subtitle: string;
   title: string;
 }) {
@@ -727,13 +814,14 @@ function ModalShell({
             <h2 className="font-[var(--font-syne)] text-lg font-extrabold">{title}</h2>
             <p className="mt-1 text-xs text-[#4A7868]">{subtitle}</p>
           </div>
-          <a
+          <button
             className="grid size-9 place-items-center rounded-xl border border-[#233F31] text-[#89BBAA]"
-            href="/financeiro"
+            type="button"
             aria-label="Fechar modal"
+            onClick={onClose}
           >
             <IconX aria-hidden="true" size={18} />
-          </a>
+          </button>
         </header>
         <div className="p-5">{children}</div>
       </section>
@@ -742,27 +830,31 @@ function ModalShell({
 }
 
 function ModalFooter({
+  onClose,
   primaryIcon: Icon,
   primaryLabel,
 }: {
+  onClose: () => void;
   primaryIcon: IconLike;
   primaryLabel: string;
 }) {
   return (
     <footer className="-mx-5 mt-6 flex justify-end gap-2 border-t border-[#1C3529] px-5 pt-4">
-      <a
+      <button
         className="rounded-xl border border-[#233F31] px-4 py-2 text-sm font-semibold text-[#89BBAA]"
-        href="/financeiro"
+        type="button"
+        onClick={onClose}
       >
         Cancelar
-      </a>
-      <a
+      </button>
+      <button
         className="inline-flex items-center gap-2 rounded-xl bg-[#3DD9A4] px-4 py-2 text-sm font-bold text-[#04342C]"
-        href="/financeiro"
+        type="button"
+        onClick={onClose}
       >
         <Icon aria-hidden="true" size={17} />
         {primaryLabel}
-      </a>
+      </button>
     </footer>
   );
 }
@@ -797,22 +889,32 @@ function ActionLink({
   href,
   icon: Icon,
   label,
+  onClick,
   primary = false,
 }: {
-  href: string;
+  href?: string;
   icon: IconLike;
   label: string;
+  onClick?: () => void;
   primary?: boolean;
 }) {
+  const className = `inline-flex items-center justify-center gap-2 rounded-xl px-4 py-2 text-sm font-bold ${
+    primary
+      ? "bg-[#3DD9A4] text-[#04342C] shadow-[0_10px_28px_rgba(61,217,164,0.16)]"
+      : "border border-[#233F31] text-[#89BBAA]"
+  }`;
+
+  if (onClick) {
+    return (
+      <button className={className} type="button" onClick={onClick}>
+        <Icon aria-hidden="true" size={17} />
+        {label}
+      </button>
+    );
+  }
+
   return (
-    <a
-      className={`inline-flex items-center justify-center gap-2 rounded-xl px-4 py-2 text-sm font-bold ${
-        primary
-          ? "bg-[#3DD9A4] text-[#04342C] shadow-[0_10px_28px_rgba(61,217,164,0.16)]"
-          : "border border-[#233F31] text-[#89BBAA]"
-      }`}
-      href={href}
-    >
+    <a className={className} href={href}>
       <Icon aria-hidden="true" size={17} />
       {label}
     </a>

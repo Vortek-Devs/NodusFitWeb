@@ -20,7 +20,9 @@ Estas rotas compartilham o `PersonalPreviewShell`, baseado no aside do dashboard
 Notas:
 
 - `/financeiro` foi componentizada em React/Next; nao usa iframe.
-- `/dashboard` e `/treinos/novo` ainda usam os HTMLs de referencia via iframe, mas ficam dentro do shell global para validar navegacao e fluxo.
+- No fluxo normal de `/financeiro`, os botoes de historico, registrar pagamento e configurar mensalidade abrem drawer/modal na propria tela. As rotas `/financeiro/drawer`, `/financeiro/pagamento` e `/financeiro/config` sao deep links de preview para validar cada estado diretamente.
+- `/dashboard` foi componentizada em React/Next e compartilha o mesmo frame centralizado do financeiro.
+- `/treinos/novo` ainda usa o HTML de referencia via iframe, mas fica dentro do shell global para validar navegacao e fluxo.
 - O shell global e a fonte de verdade para navegacao interna do personal nesta fase.
 - As telas permanecem abertas para preview e fora do fluxo de auth/login.
 
@@ -62,7 +64,7 @@ Notas:
 Principais issues tocadas pelo preview:
 
 - Personal/dashboard/treino: `VOR-55`, `VOR-84`, `VOR-76`
-- Financeiro: usar como base para as tasks de controle financeiro, mensalidades, historico e pagamento quando forem quebradas no Linear.
+- Financeiro: `VOR-95`, `VOR-96`, `VOR-97`, `VOR-32`, `VOR-10`
 - Aluno treino: `VOR-87`, `VOR-88`, `VOR-109`, `VOR-90`, `VOR-89`, `VOR-91`
 - Aluno perfil/evolucao/chat: `VOR-110`, `VOR-92`, `VOR-93`, `VOR-94`, `VOR-103`, `VOR-29`, `VOR-9`
 - Publico/convite/onboarding: `VOR-105`, `VOR-111`, `VOR-54`, `VOR-71`, `VOR-72`
