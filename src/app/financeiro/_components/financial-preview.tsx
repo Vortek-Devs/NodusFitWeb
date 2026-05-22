@@ -21,7 +21,7 @@ import {
   IconX,
 } from "@tabler/icons-react";
 import type { ComponentType } from "react";
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import {
   PersonalPreviewPage,
   PersonalPreviewShell,
@@ -634,10 +634,33 @@ function FinanceDrawer({
   openConfig: () => void;
   openPayment: () => void;
 }) {
+  const [isEntered, setIsEntered] = useState(false);
+
+  useEffect(() => {
+    const frame = requestAnimationFrame(() => setIsEntered(true));
+    return () => cancelAnimationFrame(frame);
+  }, []);
+
+  const closeWithMotion = () => {
+    setIsEntered(false);
+    window.setTimeout(onClose, 260);
+  };
+
   return (
     <>
-      <div className="fixed inset-0 z-30 bg-black/55" />
-      <aside className="fixed inset-y-0 right-0 z-40 flex w-full max-w-[460px] flex-col border-l border-[#1C3529] bg-[#0D1A15] shadow-2xl">
+      <button
+        className={`fixed inset-0 z-30 bg-black/55 transition-opacity duration-300 ${
+          isEntered ? "opacity-100" : "opacity-0"
+        }`}
+        type="button"
+        aria-label="Fechar drawer"
+        onClick={closeWithMotion}
+      />
+      <aside
+        className={`fixed inset-y-0 right-0 z-40 flex w-full max-w-[460px] flex-col border-l border-[#1C3529] bg-[#0D1A15] shadow-2xl transition-transform duration-300 ease-[cubic-bezier(0.16,1,0.3,1)] ${
+          isEntered ? "translate-x-0" : "translate-x-full"
+        }`}
+      >
         <div className="flex items-start justify-between gap-4 border-b border-[#1C3529] p-5">
           <div>
             <h2 className="font-[var(--font-syne)] text-lg font-extrabold">
@@ -649,7 +672,7 @@ function FinanceDrawer({
             className="grid size-9 place-items-center rounded-xl border border-[#233F31] text-[#89BBAA]"
             type="button"
             aria-label="Fechar drawer"
-            onClick={onClose}
+            onClick={closeWithMotion}
           >
             <IconX aria-hidden="true" size={18} />
           </button>

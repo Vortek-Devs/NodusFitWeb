@@ -108,12 +108,12 @@ export function DashboardPreview() {
       <PersonalPreviewPage topbar={<DashboardTopbar />}>
         <div className="space-y-6">
           <StatsGrid />
-          <div className="grid gap-6 xl:grid-cols-[minmax(0,1.55fr)_minmax(320px,0.7fr)]">
-            <div className="space-y-6">
+          <div className="grid min-w-0 gap-6 xl:grid-cols-[minmax(0,1.55fr)_minmax(320px,0.7fr)]">
+            <div className="min-w-0 space-y-6">
               <AdherencePanel />
               <StudentsPanel />
             </div>
-            <aside className="space-y-6">
+            <aside className="min-w-0 space-y-6">
               <QuickActions />
               <FinancialPanel />
               <ActivityPanel />
@@ -184,21 +184,21 @@ function StatCard({
   };
 
   return (
-    <article className="rounded-2xl border border-[#1C3529] bg-[#0D1A15] p-5">
+    <article className="min-w-0 overflow-hidden rounded-2xl border border-[#1C3529] bg-[#0D1A15] p-5">
       <div className="mb-5 flex items-start justify-between gap-4">
         <div
-          className={`grid size-10 place-items-center rounded-xl border ${toneClasses[tone]}`}
+          className={`grid size-10 shrink-0 place-items-center rounded-xl border ${toneClasses[tone]}`}
         >
           <Icon aria-hidden="true" size={20} />
         </div>
         <span
-          className={`rounded-full px-2 py-1 text-[11px] font-bold ${toneClasses[tone]}`}
+          className={`max-w-[7rem] truncate rounded-full px-2 py-1 text-[11px] font-bold ${toneClasses[tone]}`}
         >
           {delta}
         </span>
       </div>
-      <p className="font-mono text-3xl text-[#E6F7F0]">{value}</p>
-      <p className="mt-1 text-sm text-[#4A7868]">{label}</p>
+      <p className="truncate font-mono text-2xl text-[#E6F7F0] sm:text-3xl">{value}</p>
+      <p className="mt-1 truncate text-sm text-[#4A7868]">{label}</p>
       <div className="mt-4 h-1.5 overflow-hidden rounded-full bg-[#182B22]">
         <div
           className={`h-full rounded-full ${tone === "red" ? "w-[18%] bg-[#E05050]" : tone === "yellow" ? "w-[76%] bg-[#EFC027]" : "w-[84%] bg-[#3DD9A4]"}`}
@@ -299,8 +299,8 @@ function StudentsPanel() {
 
 function StudentRow({ student }: { student: (typeof students)[number] }) {
   return (
-    <article className="grid gap-3 py-4 sm:grid-cols-[auto_1fr_auto] sm:items-center">
-      <div className="grid size-10 place-items-center rounded-full bg-[#3DD9A4]/12 text-xs font-bold text-[#3DD9A4]">
+    <article className="grid min-w-0 gap-3 py-4 sm:grid-cols-[auto_1fr_auto] sm:items-center">
+      <div className="grid size-10 shrink-0 place-items-center rounded-full bg-[#3DD9A4]/12 text-xs font-bold text-[#3DD9A4]">
         {student.initials}
       </div>
       <div className="min-w-0">
@@ -312,8 +312,8 @@ function StudentRow({ student }: { student: (typeof students)[number] }) {
           </span>
         </p>
       </div>
-      <div className="flex items-center gap-3 sm:justify-end">
-        <div className="h-1.5 w-28 overflow-hidden rounded-full bg-[#182B22]">
+      <div className="flex min-w-0 items-center gap-3 sm:justify-end">
+        <div className="h-1.5 min-w-0 flex-1 overflow-hidden rounded-full bg-[#182B22] sm:w-28 sm:flex-none">
           <div
             className="h-full rounded-full bg-[#3DD9A4]"
             style={{ width: `${student.adherence}%` }}
