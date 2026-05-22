@@ -1,0 +1,1036 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Nodus Fit — Criar Treino</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Syne:wght@700;800&family=DM+Sans:opsz,wght@9..40,300;9..40,400;9..40,500;9..40,600&family=DM+Mono:wght@400;500&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@tabler/icons-webfont@3.19.0/dist/tabler-icons.min.css">
+<style>
+*,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
+html{scroll-behavior:smooth}
+
+:root{
+  --mint:#3DD9A4;--mint-mid:rgba(61,217,164,.18);--mint-dim:rgba(61,217,164,.08);
+  --mint-bd:rgba(61,217,164,.22);--mint-dark:#0C5E48;--mint-ink:#04342C;
+  --bg:#07100D;--s1:#0D1A15;--s2:#122019;--s3:#182B22;--s4:#1D2E25;
+  --bd:#1C3529;--bd2:#233F31;
+  --t1:#E6F7F0;--t2:#89BBAA;--t3:#4A7868;--t4:#2A5245;
+  --red:#E05050;--yellow:#EFC027;--blue:#4A90D9;
+  --ff-d:'Syne',sans-serif;--ff-b:'DM Sans',sans-serif;--ff-m:'DM Mono',monospace;
+  --r-s:8px;--r-m:12px;--r-l:16px;--r-xl:22px;
+  --sidebar:280px;--panel:340px;
+}
+
+body{font-family:var(--ff-b);background:var(--bg);color:var(--t1);-webkit-font-smoothing:antialiased;overflow-x:hidden;min-height:100vh}
+
+/* ── TOPBAR ── */
+.topbar{
+  position:fixed;top:0;left:0;right:0;z-index:200;
+  height:56px;background:rgba(7,16,13,.94);backdrop-filter:blur(20px);
+  border-bottom:1px solid var(--bd);
+  display:flex;align-items:center;padding:0 20px;gap:16px;
+}
+.topbar-back{
+  width:34px;height:34px;border-radius:var(--r-m);background:var(--s2);border:1px solid var(--bd2);
+  display:flex;align-items:center;justify-content:center;cursor:pointer;color:var(--t2);
+  transition:border-color .18s,color .18s;flex-shrink:0;
+}
+.topbar-back:hover{border-color:var(--mint-bd);color:var(--t1)}
+.topbar-center{flex:1;display:flex;flex-direction:column;gap:1px}
+.topbar-title{font-family:var(--ff-d);font-size:15px;font-weight:800;color:var(--t1);letter-spacing:-.01em;line-height:1}
+.topbar-sub{font-size:11px;color:var(--t3)}
+.topbar-actions{display:flex;align-items:center;gap:8px;flex-shrink:0}
+.btn-ghost{
+  display:inline-flex;align-items:center;gap:6px;
+  background:transparent;color:var(--t2);
+  font-family:var(--ff-b);font-size:13px;font-weight:500;
+  padding:7px 14px;border-radius:var(--r-m);border:1px solid var(--bd2);cursor:pointer;
+  transition:border-color .18s,color .18s;
+}
+.btn-ghost:hover{border-color:var(--mint-bd);color:var(--t1)}
+.btn-primary{
+  display:inline-flex;align-items:center;gap:6px;
+  background:var(--mint);color:var(--mint-ink);
+  font-family:var(--ff-b);font-size:13px;font-weight:700;
+  padding:8px 18px;border-radius:var(--r-m);border:none;cursor:pointer;
+  box-shadow:0 4px 18px rgba(61,217,164,.2);
+  transition:transform .15s,box-shadow .15s,opacity .15s;
+}
+.btn-primary:hover{transform:translateY(-1px);box-shadow:0 6px 24px rgba(61,217,164,.3)}
+.btn-primary:active{transform:translateY(0);opacity:.9}
+
+/* ── LAYOUT ── */
+.layout{display:flex;padding-top:56px;height:100vh;overflow:hidden}
+
+/* ── LEFT SIDEBAR: Config ── */
+.sidebar{
+  width:var(--sidebar);flex-shrink:0;
+  background:var(--s1);border-right:1px solid var(--bd);
+  display:flex;flex-direction:column;overflow:hidden;
+}
+.sidebar-scroll{flex:1;overflow-y:auto;padding:20px 16px}
+.sidebar-scroll::-webkit-scrollbar{width:4px}
+.sidebar-scroll::-webkit-scrollbar-track{background:transparent}
+.sidebar-scroll::-webkit-scrollbar-thumb{background:var(--bd2);border-radius:4px}
+
+.field-group{margin-bottom:20px}
+.field-label{font-size:11px;font-weight:600;color:var(--t3);text-transform:uppercase;letter-spacing:.09em;margin-bottom:7px;display:block}
+.field-input{
+  width:100%;background:var(--s2);border:1px solid var(--bd2);border-radius:var(--r-m);
+  color:var(--t1);font-family:var(--ff-b);font-size:14px;padding:10px 12px;
+  transition:border-color .18s,box-shadow .18s;outline:none;
+}
+.field-input:focus{border-color:var(--mint-bd);box-shadow:0 0 0 3px rgba(61,217,164,.07)}
+.field-input::placeholder{color:var(--t4)}
+textarea.field-input{resize:vertical;min-height:72px;line-height:1.55}
+
+.day-tabs{display:flex;gap:5px;margin-bottom:20px}
+.day-tab{
+  flex:1;padding:8px 4px;border-radius:var(--r-m);border:1px solid var(--bd2);
+  background:var(--s2);color:var(--t3);font-family:var(--ff-b);font-size:12px;font-weight:600;
+  cursor:pointer;text-align:center;transition:all .18s;
+}
+.day-tab.active{background:var(--mint-dim);border-color:var(--mint-bd);color:var(--mint)}
+.day-tab:hover:not(.active){border-color:var(--bd);color:var(--t2)}
+
+.day-add{
+  width:100%;padding:9px;border-radius:var(--r-m);border:1px dashed var(--bd2);
+  background:transparent;color:var(--t4);font-family:var(--ff-b);font-size:12px;
+  cursor:pointer;display:flex;align-items:center;justify-content:center;gap:6px;
+  transition:border-color .18s,color .18s;margin-bottom:20px;
+}
+.day-add:hover{border-color:var(--mint-bd);color:var(--mint)}
+
+.divider{height:1px;background:var(--bd);margin:4px 0 20px}
+
+.aluno-card{
+  background:var(--s2);border:1px solid var(--bd2);border-radius:var(--r-l);padding:12px;
+  display:flex;align-items:center;gap:10px;cursor:pointer;
+  transition:border-color .18s;
+}
+.aluno-card:hover{border-color:var(--mint-bd)}
+.aluno-av{
+  width:34px;height:34px;border-radius:50%;display:flex;align-items:center;justify-content:center;
+  font-size:11px;font-weight:700;flex-shrink:0;background:var(--mint-dim);color:var(--mint);border:1px solid var(--mint-bd);
+}
+.aluno-name{font-size:13px;font-weight:600;color:var(--t1)}
+.aluno-sub{font-size:11px;color:var(--t3);margin-top:1px}
+.aluno-arrow{margin-left:auto;color:var(--t4);font-size:14px}
+
+/* ── MAIN: Builder ── */
+.main{flex:1;display:flex;flex-direction:column;overflow:hidden;background:var(--bg);position:relative}
+.main-scroll{flex:1;overflow-y:auto;padding:24px 20px}
+.main-scroll::-webkit-scrollbar{width:4px}
+.main-scroll::-webkit-scrollbar-track{background:transparent}
+.main-scroll::-webkit-scrollbar-thumb{background:var(--bd2);border-radius:4px}
+
+/* dot grid */
+.main-scroll{background-image:radial-gradient(rgba(61,217,164,.035) 1px,transparent 1px);background-size:22px 22px}
+
+.day-header{
+  display:flex;align-items:center;gap:12px;margin-bottom:20px;
+}
+.day-badge{
+  font-family:var(--ff-m);font-size:11px;color:var(--mint);
+  background:var(--mint-dim);border:1px solid var(--mint-bd);
+  padding:4px 12px;border-radius:999px;letter-spacing:.04em;
+}
+.day-title-input{
+  flex:1;background:transparent;border:none;border-bottom:1px solid var(--bd2);
+  color:var(--t1);font-family:var(--ff-d);font-size:20px;font-weight:800;
+  padding:4px 0;outline:none;letter-spacing:-.02em;
+  transition:border-color .18s;
+}
+.day-title-input:focus{border-color:var(--mint-bd)}
+.day-title-input::placeholder{color:var(--t4)}
+
+/* exercise card */
+.ex-card{
+  background:var(--s1);border:1px solid var(--bd);border-radius:var(--r-xl);
+  margin-bottom:10px;overflow:hidden;
+  transition:border-color .2s,box-shadow .2s,transform .18s;
+  cursor:grab;
+}
+.ex-card:active{cursor:grabbing}
+.ex-card.dragging{opacity:.45;transform:scale(.98)}
+.ex-card.drag-over{border-color:var(--mint-bd);box-shadow:0 0 0 2px rgba(61,217,164,.12)}
+.ex-card:hover{border-color:var(--bd2);box-shadow:0 4px 20px rgba(0,0,0,.25)}
+
+.ex-header{
+  display:flex;align-items:center;gap:12px;padding:14px 16px;
+  cursor:pointer;user-select:none;
+}
+.ex-drag{color:var(--t4);font-size:16px;cursor:grab;flex-shrink:0}
+.ex-num{
+  font-family:var(--ff-m);font-size:11px;color:var(--t3);
+  width:20px;text-align:center;flex-shrink:0;
+}
+.ex-info{flex:1;min-width:0}
+.ex-name{font-size:14px;font-weight:600;color:var(--t1);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.ex-meta{font-size:11px;color:var(--t3);margin-top:2px}
+.ex-muscle-tags{display:flex;gap:4px;margin-top:5px;flex-wrap:wrap}
+.muscle-tag{
+  font-size:9.5px;font-weight:600;padding:2px 7px;border-radius:999px;
+  background:var(--mint-dim);color:var(--mint);border:1px solid var(--mint-bd);
+}
+.muscle-tag.sec{background:var(--s2);color:var(--t3);border-color:var(--bd2)}
+.ex-chevron{color:var(--t4);font-size:14px;flex-shrink:0;transition:transform .2s}
+.ex-card.open .ex-chevron{transform:rotate(180deg)}
+.ex-actions{display:flex;gap:6px;flex-shrink:0}
+.ex-action{
+  width:28px;height:28px;border-radius:var(--r-s);display:flex;align-items:center;justify-content:center;
+  background:transparent;border:1px solid var(--bd2);color:var(--t3);cursor:pointer;font-size:13px;
+  transition:all .15s;
+}
+.ex-action:hover{border-color:var(--mint-bd);color:var(--mint)}
+.ex-action.del:hover{border-color:rgba(224,80,80,.4);color:var(--red)}
+
+.ex-body{
+  display:none;padding:0 16px 16px;border-top:1px solid var(--bd);
+}
+.ex-card.open .ex-body{display:block}
+
+/* sets table */
+.sets-header{
+  display:grid;grid-template-columns:28px 1fr 1fr 1fr 80px 28px;
+  gap:6px;padding:8px 0 6px;
+  font-size:10px;font-weight:600;color:var(--t4);text-transform:uppercase;letter-spacing:.07em;
+  align-items:center;
+}
+.set-row{
+  display:grid;grid-template-columns:28px 1fr 1fr 1fr 80px 28px;
+  gap:6px;margin-bottom:5px;align-items:center;
+}
+.set-n{
+  font-family:var(--ff-m);font-size:12px;color:var(--t3);
+  width:28px;height:28px;border-radius:50%;background:var(--s2);border:1px solid var(--bd2);
+  display:flex;align-items:center;justify-content:center;flex-shrink:0;
+}
+.set-input{
+  background:var(--s2);border:1px solid var(--bd2);border-radius:var(--r-s);
+  color:var(--t1);font-family:var(--ff-m);font-size:13px;
+  padding:7px 8px;text-align:center;outline:none;width:100%;
+  transition:border-color .15s,box-shadow .15s;
+}
+.set-input:focus{border-color:var(--mint-bd);box-shadow:0 0 0 2px rgba(61,217,164,.06)}
+.set-del{
+  width:28px;height:28px;border-radius:var(--r-s);display:flex;align-items:center;justify-content:center;
+  background:transparent;border:1px solid transparent;color:var(--t4);cursor:pointer;font-size:12px;
+  transition:all .15s;
+}
+.set-del:hover{border-color:rgba(224,80,80,.3);color:var(--red)}
+.add-set{
+  display:flex;align-items:center;gap:6px;
+  background:transparent;border:1px dashed var(--bd2);border-radius:var(--r-s);
+  color:var(--t4);font-family:var(--ff-b);font-size:12px;
+  padding:7px 12px;cursor:pointer;margin-top:4px;width:100%;
+  transition:border-color .15s,color .15s;
+}
+.add-set:hover{border-color:var(--mint-bd);color:var(--mint)}
+
+.ex-notes{
+  width:100%;background:var(--s2);border:1px solid var(--bd2);border-radius:var(--r-s);
+  color:var(--t1);font-family:var(--ff-b);font-size:12px;padding:8px 10px;
+  outline:none;resize:none;min-height:54px;line-height:1.55;margin-top:10px;
+  transition:border-color .15s;
+}
+.ex-notes:focus{border-color:var(--mint-bd)}
+.ex-notes::placeholder{color:var(--t4)}
+
+/* superset badge */
+.superset-band{
+  background:rgba(239,192,39,.07);border-top:1px solid rgba(239,192,39,.2);
+  border-bottom:1px solid rgba(239,192,39,.2);
+  padding:5px 16px;font-size:10px;font-weight:600;
+  color:var(--yellow);letter-spacing:.06em;text-transform:uppercase;
+  display:flex;align-items:center;gap:6px;
+}
+
+/* add exercise zone */
+.add-ex-zone{
+  border:1.5px dashed var(--bd2);border-radius:var(--r-xl);
+  padding:20px;text-align:center;cursor:pointer;
+  transition:border-color .2s,background .2s;
+}
+.add-ex-zone:hover{border-color:var(--mint-bd);background:var(--mint-dim)}
+.add-ex-zone i{font-size:22px;color:var(--t3);margin-bottom:6px}
+.add-ex-zone-t{font-size:14px;font-weight:600;color:var(--t2)}
+.add-ex-zone-s{font-size:12px;color:var(--t4);margin-top:3px}
+
+/* cardio block */
+.cardio-block{
+  background:var(--s1);border:1px solid var(--bd);border-radius:var(--r-xl);
+  padding:14px 16px;margin-bottom:10px;display:flex;align-items:center;gap:12px;
+}
+.cardio-icon{width:36px;height:36px;border-radius:var(--r-m);background:rgba(74,144,217,.1);border:1px solid rgba(74,144,217,.25);display:flex;align-items:center;justify-content:center;color:var(--blue);font-size:18px;flex-shrink:0}
+.cardio-info{flex:1}
+.cardio-name{font-size:13px;font-weight:600;color:var(--t1)}
+.cardio-meta{font-size:11px;color:var(--t3);margin-top:2px}
+
+/* ── RIGHT PANEL: Exercise lib ── */
+.panel{
+  width:var(--panel);flex-shrink:0;
+  background:var(--s1);border-left:1px solid var(--bd);
+  display:flex;flex-direction:column;overflow:hidden;
+}
+.panel-head{padding:16px 16px 12px;border-bottom:1px solid var(--bd)}
+.panel-title{font-family:var(--ff-d);font-size:14px;font-weight:800;color:var(--t1);margin-bottom:10px;letter-spacing:-.01em}
+.search-wrap{position:relative}
+.search-input{
+  width:100%;background:var(--s2);border:1px solid var(--bd2);border-radius:var(--r-m);
+  color:var(--t1);font-family:var(--ff-b);font-size:13px;padding:8px 12px 8px 34px;
+  outline:none;transition:border-color .18s;
+}
+.search-input:focus{border-color:var(--mint-bd)}
+.search-input::placeholder{color:var(--t4)}
+.search-icon{position:absolute;left:10px;top:50%;transform:translateY(-50%);color:var(--t4);font-size:15px;pointer-events:none}
+.filter-row{display:flex;gap:5px;margin-top:10px;flex-wrap:wrap}
+.filter-pill{
+  font-size:10.5px;font-weight:600;padding:4px 10px;border-radius:999px;
+  border:1px solid var(--bd2);background:var(--s2);color:var(--t3);cursor:pointer;
+  transition:all .15s;white-space:nowrap;
+}
+.filter-pill.active{background:var(--mint-dim);border-color:var(--mint-bd);color:var(--mint)}
+.filter-pill:hover:not(.active){border-color:var(--bd);color:var(--t2)}
+.panel-list{flex:1;overflow-y:auto;padding:8px}
+.panel-list::-webkit-scrollbar{width:3px}
+.panel-list::-webkit-scrollbar-thumb{background:var(--bd2);border-radius:3px}
+
+.lib-item{
+  display:flex;align-items:center;gap:10px;padding:10px 10px;border-radius:var(--r-l);
+  cursor:pointer;transition:background .15s,border-color .15s;
+  border:1px solid transparent;margin-bottom:3px;
+}
+.lib-item:hover{background:var(--s2);border-color:var(--bd)}
+.lib-item.adding{background:var(--mint-dim);border-color:var(--mint-bd);animation:pop .3s ease}
+@keyframes pop{0%{transform:scale(.97)}60%{transform:scale(1.02)}100%{transform:scale(1)}}
+.lib-icon{width:34px;height:34px;border-radius:var(--r-s);background:var(--s2);border:1px solid var(--bd);display:flex;align-items:center;justify-content:center;color:var(--t3);font-size:17px;flex-shrink:0;transition:background .15s,border-color .15s,color .15s}
+.lib-item:hover .lib-icon{background:var(--mint-dim);border-color:var(--mint-bd);color:var(--mint)}
+.lib-info{flex:1;min-width:0}
+.lib-name{font-size:12.5px;font-weight:600;color:var(--t1);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.lib-tags{display:flex;gap:3px;margin-top:3px;flex-wrap:wrap}
+.lib-tag{font-size:9px;padding:1px 5px;border-radius:999px;background:var(--s3);color:var(--t3)}
+.lib-add{
+  width:26px;height:26px;border-radius:var(--r-s);background:transparent;border:1px solid var(--bd2);
+  color:var(--t3);display:flex;align-items:center;justify-content:center;font-size:13px;flex-shrink:0;
+  transition:all .15s;
+}
+.lib-item:hover .lib-add{background:var(--mint);border-color:var(--mint);color:var(--mint-ink)}
+
+.lib-section{font-size:10px;font-weight:600;color:var(--t4);text-transform:uppercase;letter-spacing:.09em;padding:10px 10px 5px}
+
+/* empty state */
+.empty{text-align:center;padding:40px 20px;color:var(--t4)}
+.empty i{font-size:28px;margin-bottom:10px;display:block}
+.empty-t{font-size:13px;font-weight:500;color:var(--t3)}
+.empty-s{font-size:12px;margin-top:4px}
+
+/* ── MOBILE ── */
+@media(max-width:768px){
+  :root{--sidebar:100%;--panel:100%}
+  .layout{flex-direction:column;height:auto;overflow:visible;padding-top:56px}
+  .sidebar,.panel{width:100%;border-right:none;border-left:none;border-bottom:1px solid var(--bd);height:auto}
+  .sidebar{order:2}
+  .panel{order:3;max-height:380px}
+  .main{order:1;overflow:visible;height:auto}
+  .main-scroll{overflow:visible;height:auto;padding:16px 14px}
+  .topbar-actions .btn-ghost{display:none}
+  .sets-header,.set-row{grid-template-columns:24px 1fr 1fr 1fr 68px 24px;gap:4px}
+}
+
+@media(max-width:480px){
+  .sets-header,.set-row{grid-template-columns:24px 1fr 1fr 60px 22px;gap:3px}
+  .sets-header .sh-rest,.set-row .set-rest{display:none}
+  .topbar-title{font-size:13px}
+}
+
+/* ── TOAST ── */
+.toast-wrap{position:fixed;bottom:24px;right:24px;z-index:999;display:flex;flex-direction:column;gap:8px;pointer-events:none}
+.toast{
+  background:var(--s3);border:1px solid var(--bd2);border-radius:var(--r-l);
+  padding:10px 16px;font-size:13px;color:var(--t1);
+  display:flex;align-items:center;gap:8px;
+  animation:slideIn .25s ease;pointer-events:auto;
+  box-shadow:0 8px 32px rgba(0,0,0,.4);
+}
+.toast.success{border-color:var(--mint-bd);background:rgba(13,26,21,.95)}
+.toast i{color:var(--mint);font-size:16px}
+@keyframes slideIn{from{opacity:0;transform:translateY(12px)}to{opacity:1;transform:translateY(0)}}
+
+/* ── MODAL ── */
+.modal-overlay{
+  position:fixed;inset:0;z-index:500;
+  background:rgba(7,16,13,.7);backdrop-filter:blur(6px);
+  display:flex;align-items:center;justify-content:center;padding:20px;
+  opacity:0;pointer-events:none;transition:opacity .2s;
+}
+.modal-overlay.open{opacity:1;pointer-events:all}
+.modal{
+  background:var(--s1);border:1px solid var(--bd2);border-radius:var(--r-xl);
+  width:100%;max-width:440px;padding:24px;
+  transform:translateY(16px);transition:transform .2s;
+}
+.modal-overlay.open .modal{transform:translateY(0)}
+.modal-title{font-family:var(--ff-d);font-size:18px;font-weight:800;color:var(--t1);margin-bottom:6px}
+.modal-sub{font-size:13px;color:var(--t3);margin-bottom:20px;line-height:1.55}
+.modal-actions{display:flex;gap:8px;margin-top:20px;justify-content:flex-end}
+
+/* progress ring on topbar */
+.progress-ring{width:32px;height:32px;flex-shrink:0}
+.progress-ring circle{transition:stroke-dashoffset .5s ease}
+</style>
+</head>
+<body>
+
+<!-- TOPBAR -->
+<header class="topbar">
+  <button class="topbar-back" onclick="history.back()" aria-label="Voltar">
+    <i class="ti ti-arrow-left" aria-hidden="true"></i>
+  </button>
+  <div class="topbar-center">
+    <span class="topbar-title">Criar treino</span>
+    <span class="topbar-sub" id="topSub">João Paulo · Plano A</span>
+  </div>
+  <div class="topbar-actions">
+    <svg class="progress-ring" viewBox="0 0 32 32" aria-hidden="true">
+      <circle cx="16" cy="16" r="12" fill="none" stroke="rgba(61,217,164,.12)" stroke-width="3"/>
+      <circle id="progRing" cx="16" cy="16" r="12" fill="none" stroke="#3DD9A4" stroke-width="3"
+        stroke-dasharray="75.4" stroke-dashoffset="75.4"
+        stroke-linecap="round" transform="rotate(-90 16 16)"/>
+    </svg>
+    <button class="btn-ghost" onclick="showPreview()">
+      <i class="ti ti-eye" aria-hidden="true"></i> Preview
+    </button>
+    <button class="btn-primary" onclick="publishPlan()">
+      <i class="ti ti-send" aria-hidden="true"></i> Publicar
+    </button>
+  </div>
+</header>
+
+<!-- LAYOUT -->
+<div class="layout">
+
+  <!-- SIDEBAR: Meta do treino -->
+  <aside class="sidebar">
+    <div class="sidebar-scroll">
+      <div class="field-group">
+        <label class="field-label">Aluno</label>
+        <div class="aluno-card" onclick="openModal('aluno')">
+          <div class="aluno-av">JP</div>
+          <div>
+            <div class="aluno-name">João Paulo</div>
+            <div class="aluno-sub">Plano ativo · Hipertrofia</div>
+          </div>
+          <i class="ti ti-chevron-right aluno-arrow" aria-hidden="true"></i>
+        </div>
+      </div>
+
+      <div class="field-group">
+        <label class="field-label" for="planName">Nome do plano</label>
+        <input class="field-input" id="planName" type="text" placeholder="Ex.: Hipertrofia — Fase 2" value="Hipertrofia — Fase 1" oninput="updateProgress()">
+      </div>
+
+      <div class="field-group">
+        <label class="field-label">Dias de treino</label>
+        <div class="day-tabs" id="dayTabs">
+          <button class="day-tab active" onclick="switchDay(this,'A')" data-day="A">A</button>
+          <button class="day-tab" onclick="switchDay(this,'B')" data-day="B">B</button>
+          <button class="day-tab" onclick="switchDay(this,'C')" data-day="C">C</button>
+        </div>
+        <button class="day-add" onclick="addDay()">
+          <i class="ti ti-plus" aria-hidden="true"></i> Adicionar dia
+        </button>
+      </div>
+
+      <div class="divider"></div>
+
+      <div class="field-group">
+        <label class="field-label" for="dayName">Nome do treino ativo</label>
+        <input class="field-input" id="dayName" type="text" placeholder="Ex.: Peito + Tríceps" value="Peito + Tríceps" oninput="syncDayTitle(this.value)">
+      </div>
+
+      <div class="field-group">
+        <label class="field-label" for="planNotes">Observações do plano</label>
+        <textarea class="field-input" id="planNotes" placeholder="Orientações gerais para o aluno..."></textarea>
+      </div>
+
+      <div class="divider"></div>
+
+      <div class="field-group">
+        <label class="field-label">Resumo do treino ativo</label>
+        <div style="display:grid;grid-template-columns:1fr 1fr;gap:6px">
+          <div style="background:var(--s2);border-radius:var(--r-m);padding:10px;border:1px solid var(--bd)">
+            <div style="font-family:var(--ff-m);font-size:18px;color:var(--mint)" id="exCount">4</div>
+            <div style="font-size:10px;color:var(--t3);margin-top:2px">exercícios</div>
+          </div>
+          <div style="background:var(--s2);border-radius:var(--r-m);padding:10px;border:1px solid var(--bd)">
+            <div style="font-family:var(--ff-m);font-size:18px;color:var(--t1)" id="setCount">14</div>
+            <div style="font-size:10px;color:var(--t3);margin-top:2px">séries total</div>
+          </div>
+          <div style="background:var(--s2);border-radius:var(--r-m);padding:10px;border:1px solid var(--bd)">
+            <div style="font-family:var(--ff-m);font-size:18px;color:var(--t1)" id="timeEst">~52</div>
+            <div style="font-size:10px;color:var(--t3);margin-top:2px">min estimados</div>
+          </div>
+          <div style="background:var(--s2);border-radius:var(--r-m);padding:10px;border:1px solid var(--bd)">
+            <div style="font-family:var(--ff-m);font-size:18px;color:var(--t1)" id="muscCount">3</div>
+            <div style="font-size:10px;color:var(--t3);margin-top:2px">grupos musc.</div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </aside>
+
+  <!-- MAIN: Builder -->
+  <main class="main">
+    <div class="main-scroll" id="mainScroll">
+
+      <div class="day-header">
+        <span class="day-badge" id="dayBadge">TREINO A</span>
+        <input class="day-title-input" id="dayTitleInput" value="Peito + Tríceps" placeholder="Nome do treino..." oninput="document.getElementById('dayName').value=this.value">
+      </div>
+
+      <!-- exercise list -->
+      <div id="exList">
+
+        <div class="ex-card open" data-id="1" draggable="true">
+          <div class="ex-header" onclick="toggleEx(this)">
+            <i class="ti ti-grip-vertical ex-drag" aria-hidden="true"></i>
+            <span class="ex-num">1</span>
+            <div class="ex-info">
+              <div class="ex-name">Supino Reto com Barra</div>
+              <div class="ex-meta">4 séries · 80kg sugerido</div>
+              <div class="ex-muscle-tags">
+                <span class="muscle-tag">Peitorais</span>
+                <span class="muscle-tag sec">Tríceps</span>
+                <span class="muscle-tag sec">Ombro frontal</span>
+              </div>
+            </div>
+            <div class="ex-actions" onclick="event.stopPropagation()">
+              <button class="ex-action" onclick="dupeEx(1)" title="Duplicar" aria-label="Duplicar"><i class="ti ti-copy" aria-hidden="true"></i></button>
+              <button class="ex-action del" onclick="removeEx(1)" title="Remover" aria-label="Remover"><i class="ti ti-trash" aria-hidden="true"></i></button>
+            </div>
+            <i class="ti ti-chevron-down ex-chevron" aria-hidden="true"></i>
+          </div>
+          <div class="ex-body">
+            <div class="sets-header">
+              <div></div><div>Séries</div><div>Reps</div><div>Carga kg</div>
+              <div class="sh-rest">Desc. s</div><div></div>
+            </div>
+            <div id="sets-1">
+              <div class="set-row"><div class="set-n">1</div><input class="set-input" value="1" readonly><input class="set-input" value="10" oninput="updateStats()"><input class="set-input" value="80" oninput="updateStats()"><input class="set-input set-rest" value="90" oninput="updateStats()"><button class="set-del" onclick="delSet(this)" aria-label="Remover série"><i class="ti ti-x" aria-hidden="true"></i></button></div>
+              <div class="set-row"><div class="set-n">2</div><input class="set-input" value="2" readonly><input class="set-input" value="10"><input class="set-input" value="80"><input class="set-input set-rest" value="90"><button class="set-del" onclick="delSet(this)" aria-label="Remover série"><i class="ti ti-x" aria-hidden="true"></i></button></div>
+              <div class="set-row"><div class="set-n">3</div><input class="set-input" value="3" readonly><input class="set-input" value="8"><input class="set-input" value="85"><input class="set-input set-rest" value="120"><button class="set-del" onclick="delSet(this)" aria-label="Remover série"><i class="ti ti-x" aria-hidden="true"></i></button></div>
+              <div class="set-row"><div class="set-n">4</div><input class="set-input" value="4" readonly><input class="set-input" value="8"><input class="set-input" value="85"><input class="set-input set-rest" value="120"><button class="set-del" onclick="delSet(this)" aria-label="Remover série"><i class="ti ti-x" aria-hidden="true"></i></button></div>
+            </div>
+            <button class="add-set" onclick="addSet('sets-1',1)"><i class="ti ti-plus" aria-hidden="true"></i> Adicionar série</button>
+            <textarea class="ex-notes" placeholder="Observação para o aluno sobre esse exercício..."></textarea>
+          </div>
+        </div>
+
+        <div class="superset-band" id="ss-band-1">
+          <i class="ti ti-link" aria-hidden="true"></i> Superset
+        </div>
+
+        <div class="ex-card" data-id="2" draggable="true">
+          <div class="ex-header" onclick="toggleEx(this)">
+            <i class="ti ti-grip-vertical ex-drag" aria-hidden="true"></i>
+            <span class="ex-num">2</span>
+            <div class="ex-info">
+              <div class="ex-name">Crucifixo com Halteres</div>
+              <div class="ex-meta">3 séries · 20kg sugerido</div>
+              <div class="ex-muscle-tags">
+                <span class="muscle-tag">Peitorais</span>
+              </div>
+            </div>
+            <div class="ex-actions" onclick="event.stopPropagation()">
+              <button class="ex-action" onclick="dupeEx(2)" title="Duplicar" aria-label="Duplicar"><i class="ti ti-copy" aria-hidden="true"></i></button>
+              <button class="ex-action del" onclick="removeEx(2)" title="Remover" aria-label="Remover"><i class="ti ti-trash" aria-hidden="true"></i></button>
+            </div>
+            <i class="ti ti-chevron-down ex-chevron" aria-hidden="true"></i>
+          </div>
+          <div class="ex-body">
+            <div class="sets-header"><div></div><div>Séries</div><div>Reps</div><div>Carga kg</div><div class="sh-rest">Desc. s</div><div></div></div>
+            <div id="sets-2">
+              <div class="set-row"><div class="set-n">1</div><input class="set-input" value="1" readonly><input class="set-input" value="12"><input class="set-input" value="20"><input class="set-input set-rest" value="0"><button class="set-del" onclick="delSet(this)" aria-label="Remover série"><i class="ti ti-x" aria-hidden="true"></i></button></div>
+              <div class="set-row"><div class="set-n">2</div><input class="set-input" value="2" readonly><input class="set-input" value="12"><input class="set-input" value="20"><input class="set-input set-rest" value="0"><button class="set-del" onclick="delSet(this)" aria-label="Remover série"><i class="ti ti-x" aria-hidden="true"></i></button></div>
+              <div class="set-row"><div class="set-n">3</div><input class="set-input" value="3" readonly><input class="set-input" value="12"><input class="set-input" value="20"><input class="set-input set-rest" value="60"><button class="set-del" onclick="delSet(this)" aria-label="Remover série"><i class="ti ti-x" aria-hidden="true"></i></button></div>
+            </div>
+            <button class="add-set" onclick="addSet('sets-2',2)"><i class="ti ti-plus" aria-hidden="true"></i> Adicionar série</button>
+            <textarea class="ex-notes" placeholder="Observação..."></textarea>
+          </div>
+        </div>
+
+        <div class="ex-card" data-id="3" draggable="true">
+          <div class="ex-header" onclick="toggleEx(this)">
+            <i class="ti ti-grip-vertical ex-drag" aria-hidden="true"></i>
+            <span class="ex-num">3</span>
+            <div class="ex-info">
+              <div class="ex-name">Tríceps Corda no Cabo</div>
+              <div class="ex-meta">4 séries · 25kg sugerido</div>
+              <div class="ex-muscle-tags">
+                <span class="muscle-tag">Tríceps</span>
+              </div>
+            </div>
+            <div class="ex-actions" onclick="event.stopPropagation()">
+              <button class="ex-action" onclick="dupeEx(3)" title="Duplicar" aria-label="Duplicar"><i class="ti ti-copy" aria-hidden="true"></i></button>
+              <button class="ex-action del" onclick="removeEx(3)" title="Remover" aria-label="Remover"><i class="ti ti-trash" aria-hidden="true"></i></button>
+            </div>
+            <i class="ti ti-chevron-down ex-chevron" aria-hidden="true"></i>
+          </div>
+          <div class="ex-body">
+            <div class="sets-header"><div></div><div>Séries</div><div>Reps</div><div>Carga kg</div><div class="sh-rest">Desc. s</div><div></div></div>
+            <div id="sets-3">
+              <div class="set-row"><div class="set-n">1</div><input class="set-input" value="1" readonly><input class="set-input" value="12"><input class="set-input" value="25"><input class="set-input set-rest" value="60"><button class="set-del" onclick="delSet(this)" aria-label="Remover série"><i class="ti ti-x" aria-hidden="true"></i></button></div>
+              <div class="set-row"><div class="set-n">2</div><input class="set-input" value="2" readonly><input class="set-input" value="12"><input class="set-input" value="25"><input class="set-input set-rest" value="60"><button class="set-del" onclick="delSet(this)" aria-label="Remover série"><i class="ti ti-x" aria-hidden="true"></i></button></div>
+              <div class="set-row"><div class="set-n">3</div><input class="set-input" value="3" readonly><input class="set-input" value="10"><input class="set-input" value="27.5"><input class="set-input set-rest" value="60"><button class="set-del" onclick="delSet(this)" aria-label="Remover série"><i class="ti ti-x" aria-hidden="true"></i></button></div>
+              <div class="set-row"><div class="set-n">4</div><input class="set-input" value="4" readonly><input class="set-input" value="10"><input class="set-input" value="27.5"><input class="set-input set-rest" value="90"><button class="set-del" onclick="delSet(this)" aria-label="Remover série"><i class="ti ti-x" aria-hidden="true"></i></button></div>
+            </div>
+            <button class="add-set" onclick="addSet('sets-3',3)"><i class="ti ti-plus" aria-hidden="true"></i> Adicionar série</button>
+            <textarea class="ex-notes" placeholder="Observação..."></textarea>
+          </div>
+        </div>
+
+        <div class="ex-card" data-id="4" draggable="true">
+          <div class="ex-header" onclick="toggleEx(this)">
+            <i class="ti ti-grip-vertical ex-drag" aria-hidden="true"></i>
+            <span class="ex-num">4</span>
+            <div class="ex-info">
+              <div class="ex-name">Mergulho entre Bancos</div>
+              <div class="ex-meta">3 séries · peso corporal</div>
+              <div class="ex-muscle-tags">
+                <span class="muscle-tag">Tríceps</span>
+                <span class="muscle-tag sec">Peitorais</span>
+              </div>
+            </div>
+            <div class="ex-actions" onclick="event.stopPropagation()">
+              <button class="ex-action" onclick="dupeEx(4)" title="Duplicar" aria-label="Duplicar"><i class="ti ti-copy" aria-hidden="true"></i></button>
+              <button class="ex-action del" onclick="removeEx(4)" title="Remover" aria-label="Remover"><i class="ti ti-trash" aria-hidden="true"></i></button>
+            </div>
+            <i class="ti ti-chevron-down ex-chevron" aria-hidden="true"></i>
+          </div>
+          <div class="ex-body">
+            <div class="sets-header"><div></div><div>Séries</div><div>Reps</div><div>Carga kg</div><div class="sh-rest">Desc. s</div><div></div></div>
+            <div id="sets-4">
+              <div class="set-row"><div class="set-n">1</div><input class="set-input" value="1" readonly><input class="set-input" value="falha"><input class="set-input" value="—"><input class="set-input set-rest" value="90"><button class="set-del" onclick="delSet(this)" aria-label="Remover série"><i class="ti ti-x" aria-hidden="true"></i></button></div>
+              <div class="set-row"><div class="set-n">2</div><input class="set-input" value="2" readonly><input class="set-input" value="falha"><input class="set-input" value="—"><input class="set-input set-rest" value="90"><button class="set-del" onclick="delSet(this)" aria-label="Remover série"><i class="ti ti-x" aria-hidden="true"></i></button></div>
+              <div class="set-row"><div class="set-n">3</div><input class="set-input" value="3" readonly><input class="set-input" value="falha"><input class="set-input" value="—"><input class="set-input set-rest" value="90"><button class="set-del" onclick="delSet(this)" aria-label="Remover série"><i class="ti ti-x" aria-hidden="true"></i></button></div>
+            </div>
+            <button class="add-set" onclick="addSet('sets-4',4)"><i class="ti ti-plus" aria-hidden="true"></i> Adicionar série</button>
+            <textarea class="ex-notes" placeholder="Observação..."></textarea>
+          </div>
+        </div>
+
+      </div><!-- /exList -->
+
+      <!-- add zone -->
+      <div class="add-ex-zone" id="addZone" onclick="focusSearch()">
+        <i class="ti ti-plus" aria-hidden="true"></i>
+        <div class="add-ex-zone-t">Adicionar exercício</div>
+        <div class="add-ex-zone-s">Busque na biblioteca ao lado ou crie um customizado</div>
+      </div>
+
+      <!-- cardio -->
+      <div style="margin-top:16px">
+        <div style="font-size:11px;font-weight:600;color:var(--t3);text-transform:uppercase;letter-spacing:.09em;margin-bottom:8px">Cardio opcional</div>
+        <div class="cardio-block" id="cardioBlock">
+          <div class="cardio-icon"><i class="ti ti-run" aria-hidden="true"></i></div>
+          <div class="cardio-info">
+            <div class="cardio-name">Esteira — Caminhada inclinada</div>
+            <div class="cardio-meta">20 min · após os exercícios</div>
+          </div>
+          <button class="ex-action del" onclick="removeCardio()" aria-label="Remover cardio"><i class="ti ti-x" aria-hidden="true"></i></button>
+        </div>
+        <button class="day-add" id="addCardioBtn" style="display:none" onclick="addCardio()">
+          <i class="ti ti-plus" aria-hidden="true"></i> Adicionar cardio
+        </button>
+      </div>
+
+      <div style="height:40px"></div>
+    </div>
+  </main>
+
+  <!-- PANEL: Biblioteca -->
+  <aside class="panel">
+    <div class="panel-head">
+      <div class="panel-title">Biblioteca de exercícios</div>
+      <div class="search-wrap">
+        <i class="ti ti-search search-icon" aria-hidden="true"></i>
+        <input class="search-input" id="libSearch" type="text" placeholder="Buscar exercício..." oninput="filterLib(this.value)" aria-label="Buscar exercício">
+      </div>
+      <div class="filter-row" id="filterRow">
+        <button class="filter-pill active" onclick="setFilter(this,'Todos')">Todos</button>
+        <button class="filter-pill" onclick="setFilter(this,'Peito')">Peito</button>
+        <button class="filter-pill" onclick="setFilter(this,'Costas')">Costas</button>
+        <button class="filter-pill" onclick="setFilter(this,'Pernas')">Pernas</button>
+        <button class="filter-pill" onclick="setFilter(this,'Ombro')">Ombro</button>
+        <button class="filter-pill" onclick="setFilter(this,'Bíceps')">Bíceps</button>
+        <button class="filter-pill" onclick="setFilter(this,'Tríceps')">Tríceps</button>
+        <button class="filter-pill" onclick="setFilter(this,'Abdômen')">Abdômen</button>
+      </div>
+    </div>
+    <div class="panel-list" id="libList"></div>
+  </aside>
+
+</div><!-- /layout -->
+
+<!-- TOAST -->
+<div class="toast-wrap" id="toastWrap"></div>
+
+<!-- MODAL -->
+<div class="modal-overlay" id="modalOverlay" onclick="closeModal(event)">
+  <div class="modal" id="modalBox">
+    <div class="modal-title" id="modalTitle">Selecionar aluno</div>
+    <div class="modal-sub" id="modalSub">Escolha para qual aluno este plano será criado.</div>
+    <div id="modalContent"></div>
+    <div class="modal-actions">
+      <button class="btn-ghost" onclick="closeModal()">Cancelar</button>
+      <button class="btn-primary" onclick="closeModal()">Confirmar</button>
+    </div>
+  </div>
+</div>
+
+<script>
+// ── DATA ──
+const LIB = [
+  {id:101,name:'Supino Inclinado com Halteres',group:'Peito',muscles:['Peitorais','Ombro frontal'],equip:'halteres',icon:'ti-barbell'},
+  {id:102,name:'Peck Deck (Voador)',group:'Peito',muscles:['Peitorais'],equip:'maquina',icon:'ti-barbell'},
+  {id:103,name:'Crossover no Cabo',group:'Peito',muscles:['Peitorais'],equip:'cabo',icon:'ti-barbell'},
+  {id:104,name:'Flexão de Braço',group:'Peito',muscles:['Peitorais','Tríceps'],equip:'peso_corpo',icon:'ti-barbell'},
+  {id:201,name:'Puxada na Frente',group:'Costas',muscles:['Dorsais','Bíceps'],equip:'maquina',icon:'ti-barbell'},
+  {id:202,name:'Remada Curvada com Barra',group:'Costas',muscles:['Dorsais','Trapézio'],equip:'barra',icon:'ti-barbell'},
+  {id:203,name:'Remada Unilateral',group:'Costas',muscles:['Dorsais','Bíceps'],equip:'halteres',icon:'ti-barbell'},
+  {id:204,name:'Pull-over com Halter',group:'Costas',muscles:['Dorsais','Tríceps'],equip:'halteres',icon:'ti-barbell'},
+  {id:301,name:'Agachamento Livre',group:'Pernas',muscles:['Quadríceps','Glúteos'],equip:'barra',icon:'ti-barbell'},
+  {id:302,name:'Leg Press 45°',group:'Pernas',muscles:['Quadríceps','Glúteos'],equip:'maquina',icon:'ti-barbell'},
+  {id:303,name:'Cadeira Extensora',group:'Pernas',muscles:['Quadríceps'],equip:'maquina',icon:'ti-barbell'},
+  {id:304,name:'Cadeira Flexora',group:'Pernas',muscles:['Posterior'],equip:'maquina',icon:'ti-barbell'},
+  {id:305,name:'Elevação de Panturrilha em Pé',group:'Pernas',muscles:['Panturrilha'],equip:'maquina',icon:'ti-barbell'},
+  {id:401,name:'Desenvolvimento com Halteres',group:'Ombro',muscles:['Ombro frontal','Tríceps'],equip:'halteres',icon:'ti-barbell'},
+  {id:402,name:'Elevação Lateral',group:'Ombro',muscles:['Ombro lateral'],equip:'halteres',icon:'ti-barbell'},
+  {id:403,name:'Elevação Frontal',group:'Ombro',muscles:['Ombro frontal'],equip:'halteres',icon:'ti-barbell'},
+  {id:501,name:'Rosca Direta com Barra',group:'Bíceps',muscles:['Bíceps'],equip:'barra',icon:'ti-barbell'},
+  {id:502,name:'Rosca Alternada',group:'Bíceps',muscles:['Bíceps'],equip:'halteres',icon:'ti-barbell'},
+  {id:503,name:'Rosca Martelo',group:'Bíceps',muscles:['Bíceps','Antebraço'],equip:'halteres',icon:'ti-barbell'},
+  {id:601,name:'Tríceps Testa com Barra',group:'Tríceps',muscles:['Tríceps'],equip:'barra',icon:'ti-barbell'},
+  {id:602,name:'Tríceps Coice',group:'Tríceps',muscles:['Tríceps'],equip:'halteres',icon:'ti-barbell'},
+  {id:603,name:'Tríceps Francês',group:'Tríceps',muscles:['Tríceps'],equip:'halteres',icon:'ti-barbell'},
+  {id:701,name:'Abdominal Crunch',group:'Abdômen',muscles:['Abdômen'],equip:'peso_corpo',icon:'ti-barbell'},
+  {id:702,name:'Prancha',group:'Abdômen',muscles:['Abdômen','Oblíquos'],equip:'peso_corpo',icon:'ti-barbell'},
+  {id:703,name:'Elevação de Pernas',group:'Abdômen',muscles:['Abdômen'],equip:'peso_corpo',icon:'ti-barbell'},
+];
+
+let activeFilter = 'Todos';
+let nextExId = 10;
+let nextSetMap = {1:5,2:4,3:5,4:4};
+
+// ── LIBRARY ──
+function renderLib(items){
+  const list = document.getElementById('libList');
+  if(!items.length){
+    list.innerHTML = `<div class="empty"><i class="ti ti-search" aria-hidden="true"></i><div class="empty-t">Nenhum exercício encontrado</div><div class="empty-s">Tente outro termo ou filtro</div></div>`;
+    return;
+  }
+  let html = '';
+  let lastGroup = '';
+  items.forEach(ex => {
+    if(activeFilter === 'Todos' && ex.group !== lastGroup){
+      html += `<div class="lib-section">${ex.group}</div>`;
+      lastGroup = ex.group;
+    }
+    const tags = ex.muscles.map(m=>`<span class="lib-tag">${m}</span>`).join('');
+    html += `<div class="lib-item" data-id="${ex.id}" onclick="addFromLib(${ex.id},this)">
+      <div class="lib-icon"><i class="ti ti-barbell" aria-hidden="true"></i></div>
+      <div class="lib-info">
+        <div class="lib-name">${ex.name}</div>
+        <div class="lib-tags">${tags}</div>
+      </div>
+      <div class="lib-add"><i class="ti ti-plus" aria-hidden="true"></i></div>
+    </div>`;
+  });
+  list.innerHTML = html;
+}
+
+function filterLib(q){
+  let items = LIB.filter(ex => {
+    const matchFilter = activeFilter === 'Todos' || ex.group === activeFilter || ex.muscles.some(m=>m.includes(activeFilter));
+    const matchQ = !q || ex.name.toLowerCase().includes(q.toLowerCase()) || ex.muscles.some(m=>m.toLowerCase().includes(q.toLowerCase()));
+    return matchFilter && matchQ;
+  });
+  renderLib(items);
+}
+
+function setFilter(el, f){
+  activeFilter = f;
+  document.querySelectorAll('.filter-pill').forEach(p=>p.classList.remove('active'));
+  el.classList.add('active');
+  filterLib(document.getElementById('libSearch').value);
+}
+
+function focusSearch(){
+  document.getElementById('libSearch').focus();
+  document.getElementById('libSearch').scrollIntoView({behavior:'smooth'});
+}
+
+function addFromLib(id, el){
+  const ex = LIB.find(e=>e.id===id);
+  if(!ex) return;
+  el.classList.add('adding');
+  setTimeout(()=>el.classList.remove('adding'),350);
+  appendExercise(ex.name, ex.muscles);
+  toast(`${ex.name} adicionado`,'success');
+}
+
+// ── EXERCISES ──
+function appendExercise(name, muscles){
+  const id = nextExId++;
+  nextSetMap[id] = 4;
+  const primaryTags = muscles.slice(0,1).map(m=>`<span class="muscle-tag">${m}</span>`).join('');
+  const secTags = muscles.slice(1).map(m=>`<span class="muscle-tag sec">${m}</span>`).join('');
+  const exNum = document.querySelectorAll('.ex-card').length + 1;
+
+  const card = document.createElement('div');
+  card.className = 'ex-card';
+  card.dataset.id = id;
+  card.draggable = true;
+  card.innerHTML = `
+    <div class="ex-header" onclick="toggleEx(this)">
+      <i class="ti ti-grip-vertical ex-drag" aria-hidden="true"></i>
+      <span class="ex-num">${exNum}</span>
+      <div class="ex-info">
+        <div class="ex-name">${name}</div>
+        <div class="ex-meta">3 séries · — kg sugerido</div>
+        <div class="ex-muscle-tags">${primaryTags}${secTags}</div>
+      </div>
+      <div class="ex-actions" onclick="event.stopPropagation()">
+        <button class="ex-action" onclick="dupeEx(${id})" title="Duplicar" aria-label="Duplicar"><i class="ti ti-copy" aria-hidden="true"></i></button>
+        <button class="ex-action del" onclick="removeEx(${id})" title="Remover" aria-label="Remover"><i class="ti ti-trash" aria-hidden="true"></i></button>
+      </div>
+      <i class="ti ti-chevron-down ex-chevron" aria-hidden="true"></i>
+    </div>
+    <div class="ex-body">
+      <div class="sets-header"><div></div><div>Séries</div><div>Reps</div><div>Carga kg</div><div class="sh-rest">Desc. s</div><div></div></div>
+      <div id="sets-${id}">
+        <div class="set-row"><div class="set-n">1</div><input class="set-input" value="1" readonly><input class="set-input" value="12"><input class="set-input" value=""><input class="set-input set-rest" value="60"><button class="set-del" onclick="delSet(this)" aria-label="Remover série"><i class="ti ti-x" aria-hidden="true"></i></button></div>
+        <div class="set-row"><div class="set-n">2</div><input class="set-input" value="2" readonly><input class="set-input" value="12"><input class="set-input" value=""><input class="set-input set-rest" value="60"><button class="set-del" onclick="delSet(this)" aria-label="Remover série"><i class="ti ti-x" aria-hidden="true"></i></button></div>
+        <div class="set-row"><div class="set-n">3</div><input class="set-input" value="3" readonly><input class="set-input" value="10"><input class="set-input" value=""><input class="set-input set-rest" value="90"><button class="set-del" onclick="delSet(this)" aria-label="Remover série"><i class="ti ti-x" aria-hidden="true"></i></button></div>
+      </div>
+      <button class="add-set" onclick="addSet('sets-${id}',${id})"><i class="ti ti-plus" aria-hidden="true"></i> Adicionar série</button>
+      <textarea class="ex-notes" placeholder="Observação para o aluno..."></textarea>
+    </div>`;
+
+  document.getElementById('exList').insertBefore(card, document.getElementById('addZone'));
+  card.classList.add('open');
+  reorderNums();
+  updateStats();
+  setupDrag(card);
+  card.scrollIntoView({behavior:'smooth',block:'nearest'});
+}
+
+function toggleEx(header){
+  const card = header.closest('.ex-card');
+  card.classList.toggle('open');
+}
+
+function removeEx(id){
+  const card = document.querySelector(`.ex-card[data-id="${id}"]`);
+  if(card){ card.remove(); reorderNums(); updateStats(); toast('Exercício removido');}
+}
+
+function dupeEx(id){
+  const card = document.querySelector(`.ex-card[data-id="${id}"]`);
+  if(!card) return;
+  const name = card.querySelector('.ex-name').textContent;
+  const muscles = Array.from(card.querySelectorAll('.muscle-tag')).map(t=>t.textContent);
+  appendExercise(name, muscles);
+  toast(`${name} duplicado`,'success');
+}
+
+function addSet(containerId, exId){
+  const container = document.getElementById(containerId);
+  const n = container.querySelectorAll('.set-row').length + 1;
+  const row = document.createElement('div');
+  row.className = 'set-row';
+  row.innerHTML = `<div class="set-n">${n}</div><input class="set-input" value="${n}" readonly><input class="set-input" value="10"><input class="set-input" value=""><input class="set-input set-rest" value="60"><button class="set-del" onclick="delSet(this)" aria-label="Remover série"><i class="ti ti-x" aria-hidden="true"></i></button>`;
+  container.appendChild(row);
+  updateStats();
+}
+
+function delSet(btn){
+  const row = btn.closest('.set-row');
+  const container = row.parentElement;
+  if(container.querySelectorAll('.set-row').length <= 1){ toast('Mínimo de 1 série'); return; }
+  row.remove();
+  renumberSets(container);
+  updateStats();
+}
+
+function renumberSets(container){
+  container.querySelectorAll('.set-row').forEach((r,i)=>{
+    r.querySelector('.set-n').textContent = i+1;
+    r.querySelectorAll('.set-input')[0].value = i+1;
+  });
+}
+
+function reorderNums(){
+  document.querySelectorAll('.ex-card').forEach((c,i)=>{
+    const n = c.querySelector('.ex-num');
+    if(n) n.textContent = i+1;
+  });
+}
+
+// ── STATS ──
+function updateStats(){
+  const cards = document.querySelectorAll('.ex-card');
+  let sets = 0;
+  cards.forEach(c=>{ sets += c.querySelectorAll('.set-row').length; });
+  const time = Math.round(sets * 3.5);
+  const muscles = new Set();
+  document.querySelectorAll('.muscle-tag:not(.sec)').forEach(t=>muscles.add(t.textContent));
+
+  document.getElementById('exCount').textContent = cards.length;
+  document.getElementById('setCount').textContent = sets;
+  document.getElementById('timeEst').textContent = '~'+time;
+  document.getElementById('muscCount').textContent = muscles.size;
+  updateProgress();
+}
+
+function updateProgress(){
+  const cards = document.querySelectorAll('.ex-card').length;
+  const hasPlan = document.getElementById('planName').value.trim().length > 0;
+  const score = Math.min(1, (cards * 0.15 + (hasPlan ? 0.2 : 0)));
+  const offset = 75.4 * (1 - Math.min(score, 1));
+  document.getElementById('progRing').style.strokeDashoffset = offset;
+}
+
+// ── DAYS ──
+function switchDay(el, day){
+  document.querySelectorAll('.day-tab').forEach(t=>t.classList.remove('active'));
+  el.classList.add('active');
+  document.getElementById('dayBadge').textContent = 'TREINO '+day;
+  document.getElementById('topSub').textContent = 'João Paulo · Plano '+day;
+}
+
+function syncDayTitle(val){
+  document.getElementById('dayTitleInput').value = val;
+}
+
+let extraDays = 3;
+function addDay(){
+  if(extraDays >= 6){ toast('Máximo de 6 dias'); return; }
+  const letters = ['D','E','F'];
+  const letter = letters[extraDays-3];
+  extraDays++;
+  const tab = document.createElement('button');
+  tab.className = 'day-tab';
+  tab.textContent = letter;
+  tab.onclick = ()=>switchDay(tab, letter);
+  tab.dataset.day = letter;
+  document.getElementById('dayTabs').appendChild(tab);
+  switchDay(tab, letter);
+  toast('Treino '+letter+' criado','success');
+}
+
+// ── CARDIO ──
+function removeCardio(){
+  document.getElementById('cardioBlock').style.display = 'none';
+  document.getElementById('addCardioBtn').style.display = 'flex';
+}
+function addCardio(){
+  document.getElementById('cardioBlock').style.display = 'flex';
+  document.getElementById('addCardioBtn').style.display = 'none';
+}
+
+// ── DRAG & DROP ──
+let dragged = null;
+function setupDrag(card){
+  card.addEventListener('dragstart',e=>{
+    dragged = card;
+    setTimeout(()=>card.classList.add('dragging'),0);
+  });
+  card.addEventListener('dragend',()=>{
+    card.classList.remove('dragging');
+    document.querySelectorAll('.ex-card').forEach(c=>c.classList.remove('drag-over'));
+    reorderNums();
+    dragged = null;
+  });
+  card.addEventListener('dragover',e=>{
+    e.preventDefault();
+    if(dragged && dragged !== card){
+      document.querySelectorAll('.ex-card').forEach(c=>c.classList.remove('drag-over'));
+      card.classList.add('drag-over');
+    }
+  });
+  card.addEventListener('drop',e=>{
+    e.preventDefault();
+    if(dragged && dragged !== card){
+      const list = document.getElementById('exList');
+      const cards = [...list.querySelectorAll('.ex-card')];
+      const dragIdx = cards.indexOf(dragged);
+      const dropIdx = cards.indexOf(card);
+      if(dragIdx < dropIdx) card.after(dragged);
+      else card.before(dragged);
+      card.classList.remove('drag-over');
+      reorderNums();
+      toast('Ordem atualizada');
+    }
+  });
+}
+document.querySelectorAll('.ex-card').forEach(setupDrag);
+
+// ── TOAST ──
+function toast(msg, type='info'){
+  const wrap = document.getElementById('toastWrap');
+  const t = document.createElement('div');
+  t.className = 'toast'+(type==='success'?' success':'');
+  t.innerHTML = `<i class="ti ${type==='success'?'ti-check':'ti-info-circle'}" aria-hidden="true"></i>${msg}`;
+  wrap.appendChild(t);
+  setTimeout(()=>t.style.opacity='0',2400);
+  setTimeout(()=>t.remove(),2700);
+}
+
+// ── MODAL ──
+function openModal(type){
+  const alunos = [{av:'JP',name:'João Paulo',sub:'Hipertrofia'},{av:'MC',name:'Maria Clara',sub:'Emagrecimento'},{av:'RF',name:'Rafael F.',sub:'Condicionamento'},{av:'AK',name:'Ana K.',sub:'Hipertrofia'}];
+  let html = '<div style="display:flex;flex-direction:column;gap:8px">';
+  alunos.forEach(a=>{
+    html += `<div class="aluno-card" onclick="selectAluno('${a.name}','${a.av}');closeModal()">
+      <div class="aluno-av">${a.av}</div>
+      <div><div class="aluno-name">${a.name}</div><div class="aluno-sub">${a.sub}</div></div>
+      <i class="ti ti-chevron-right aluno-arrow" aria-hidden="true"></i>
+    </div>`;
+  });
+  html += '</div>';
+  document.getElementById('modalContent').innerHTML = html;
+  document.getElementById('modalOverlay').classList.add('open');
+}
+
+function selectAluno(name, av){
+  document.querySelector('.aluno-name').textContent = name;
+  document.querySelector('.aluno-av').textContent = av;
+  document.getElementById('topSub').textContent = name + ' · Plano A';
+  toast(name+' selecionado','success');
+}
+
+function closeModal(e){
+  if(!e || e.target === document.getElementById('modalOverlay'))
+    document.getElementById('modalOverlay').classList.remove('open');
+}
+
+function showPreview(){ toast('Preview disponível na versão completa'); }
+function publishPlan(){
+  const name = document.getElementById('planName').value.trim();
+  if(!name){ toast('Dê um nome ao plano'); return; }
+  const exCards = document.querySelectorAll('.ex-card').length;
+  if(!exCards){ toast('Adicione ao menos um exercício'); return; }
+  toast('Plano publicado para João Paulo!','success');
+}
+
+// ── INIT ──
+renderLib(LIB);
+updateStats();
+</script>
+</body>
+</html>
