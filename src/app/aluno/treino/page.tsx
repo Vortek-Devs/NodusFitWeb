@@ -5,8 +5,7 @@ export const metadata: Metadata = {
   title: {
     absolute: "Treino do aluno | Nodus Fit",
   },
-  description:
-    "Preview aberto da home do aluno com treino do dia e dados mockados.",
+  description: "Preview aberto da home do aluno com treino do dia e dados mockados.",
   alternates: {
     canonical: "/aluno/treino",
   },

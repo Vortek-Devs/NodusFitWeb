@@ -190,46 +190,78 @@ export function FinancialPreview({
 function FinanceTopbar() {
   return (
     <header className="sticky top-0 z-10 border-b border-[#1C3529] bg-[#07100D]/95 px-4 py-3 backdrop-blur-xl sm:px-6 lg:px-8">
-      <div className="mx-auto flex w-full max-w-[1280px] flex-col gap-3 md:flex-row md:items-center md:justify-between">
-        <div className="flex min-w-0 items-center gap-3">
-          <div className="grid size-9 place-items-center rounded-xl border border-[#1C3529] bg-[#122019] text-[#3DD9A4] lg:hidden">
-            <IconReceipt aria-hidden="true" size={20} />
-          </div>
-          <div>
-            <h1 className="font-[var(--font-syne)] text-lg font-extrabold tracking-normal">
-              Controle Financeiro
-            </h1>
-            <div className="mt-1 flex items-center gap-2 text-xs text-[#89BBAA]">
-              <button
-                className="grid size-7 place-items-center rounded-lg border border-[#233F31] bg-[#122019]"
-                type="button"
-                aria-label="Mes anterior"
-              >
-                <IconChevronLeft aria-hidden="true" size={15} />
-              </button>
-              <span className="font-mono">Maio 2026</span>
-              <button
-                className="grid size-7 place-items-center rounded-lg border border-[#233F31] bg-[#122019]"
-                type="button"
-                aria-label="Proximo mes"
-              >
-                <IconChevronRight aria-hidden="true" size={15} />
-              </button>
+      <div className="mx-auto flex w-full max-w-[1280px] flex-col gap-4">
+        <div className="flex flex-col gap-3 md:flex-row md:items-center md:justify-between">
+          <div className="flex min-w-0 items-center gap-3">
+            <div className="grid size-9 place-items-center rounded-xl border border-[#1C3529] bg-[#122019] text-[#3DD9A4] lg:hidden">
+              <IconReceipt aria-hidden="true" size={20} />
             </div>
+            <div>
+              <h1 className="font-[var(--font-syne)] text-lg font-extrabold tracking-normal">
+                Controle Financeiro
+              </h1>
+              <div className="mt-1 flex items-center gap-2 text-xs text-[#89BBAA]">
+                <button
+                  className="grid size-7 place-items-center rounded-lg border border-[#233F31] bg-[#122019]"
+                  type="button"
+                  aria-label="Mes anterior"
+                >
+                  <IconChevronLeft aria-hidden="true" size={15} />
+                </button>
+                <span className="font-mono">Maio 2026</span>
+                <button
+                  className="grid size-7 place-items-center rounded-lg border border-[#233F31] bg-[#122019]"
+                  type="button"
+                  aria-label="Proximo mes"
+                >
+                  <IconChevronRight aria-hidden="true" size={15} />
+                </button>
+              </div>
+            </div>
+          </div>
+
+          <div className="flex flex-wrap gap-2">
+            <ActionLink href="/financeiro/drawer" icon={IconHistory} label="Historico" />
+            <ActionLink
+              href="/financeiro/config"
+              icon={IconPlus}
+              label="Configurar mensalidade"
+              primary
+            />
           </div>
         </div>
 
-        <div className="flex flex-wrap gap-2">
-          <ActionLink href="/financeiro/drawer" icon={IconHistory} label="Historico" />
-          <ActionLink
-            href="/financeiro/config"
-            icon={IconPlus}
-            label="Configurar mensalidade"
-            primary
-          />
-        </div>
+        <FinanceStateNav />
       </div>
     </header>
+  );
+}
+
+function FinanceStateNav() {
+  const states = [
+    { href: "/financeiro", label: "Carregada" },
+    { href: "/financeiro/carregando", label: "Loading" },
+    { href: "/financeiro/vazio", label: "Vazio" },
+    { href: "/financeiro/drawer", label: "Drawer" },
+    { href: "/financeiro/pagamento", label: "Pagamento" },
+    { href: "/financeiro/config", label: "Config" },
+  ];
+
+  return (
+    <nav
+      className="flex gap-2 overflow-x-auto rounded-2xl border border-[#1C3529] bg-[#0D1A15] p-1"
+      aria-label="Estados de preview do financeiro"
+    >
+      {states.map((state) => (
+        <a
+          className="shrink-0 rounded-xl px-3 py-2 text-xs font-bold text-[#89BBAA] transition hover:bg-[#122019] hover:text-[#E6F7F0]"
+          href={state.href}
+          key={state.href}
+        >
+          {state.label}
+        </a>
+      ))}
+    </nav>
   );
 }
 
