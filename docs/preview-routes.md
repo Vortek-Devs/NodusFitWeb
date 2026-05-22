@@ -9,7 +9,7 @@ Estas rotas compartilham o `PersonalPreviewShell`, baseado no aside do dashboard
 | Rota | Tela | Estado | Fonte visual |
 | --- | --- | --- | --- |
 | `/dashboard` | Dashboard do personal | carregado | `nodus_fit_dashboard_personal.html` |
-| `/treinos/novo` | Cadastro/builder de treino | carregado | `Personal_workout_builder.html` |
+| `/treinos/novo` | Cadastro/builder de treino | carregado | Componente React `WorkoutBuilderPreview` |
 | `/financeiro` | Controle financeiro | carregado | `financeiro.html` |
 | `/financeiro/carregando` | Controle financeiro | loading state | `financeiro.html` |
 | `/financeiro/vazio` | Controle financeiro | empty state | `financeiro.html` |
@@ -23,7 +23,7 @@ Notas:
 - No fluxo normal de `/financeiro`, os botoes de historico, registrar pagamento e configurar mensalidade abrem drawer/modal na propria tela. As rotas `/financeiro/drawer`, `/financeiro/pagamento` e `/financeiro/config` sao deep links de preview para validar cada estado diretamente.
 - O drawer financeiro abre como gaveta lateral vindo da direita; modais continuam centralizados.
 - `/dashboard` foi componentizada em React/Next e compartilha o mesmo frame centralizado do financeiro.
-- `/treinos/novo` ainda usa o HTML de referencia via iframe, mas fica dentro do shell global para validar navegacao e fluxo.
+- `/treinos/novo` foi componentizada em React/Next; nao usa iframe e fica dentro do shell global para validar navegacao e fluxo.
 - O shell global e a fonte de verdade para navegacao interna do personal nesta fase.
 - Em mobile, o shell exibe bottom nav resumida e um item `Menu` que abre a navegacao completa do aside como gaveta lateral.
 - As telas permanecem abertas para preview e fora do fluxo de auth/login.

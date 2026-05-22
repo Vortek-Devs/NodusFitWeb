@@ -117,28 +117,6 @@ export function PersonalPreviewTopbar({ children }: { children: React.ReactNode 
   );
 }
 
-export function MockupContentFrame({
-  hideMockSidebar = false,
-  src,
-  title,
-}: {
-  hideMockSidebar?: boolean;
-  src: string;
-  title: string;
-}) {
-  return (
-    <div className="h-[calc(100dvh-72px)] overflow-hidden bg-[#07100D] lg:h-dvh">
-      <iframe
-        className={`block h-full border-0 bg-[#07100D] ${
-          hideMockSidebar ? "w-[calc(100%+228px)] -translate-x-[228px]" : "w-full"
-        }`}
-        src={src}
-        title={title}
-      />
-    </div>
-  );
-}
-
 function PersonalAside({ active }: { active: PersonalSection }) {
   return (
     <aside className="fixed inset-y-0 left-0 z-30 hidden w-[228px] flex-col border-r border-[#1C3529] bg-[#0D1A15] px-2 py-5 lg:flex">

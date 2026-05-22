@@ -1,8 +1,5 @@
 import type { Metadata } from "next";
-import {
-  MockupContentFrame,
-  PersonalPreviewShell,
-} from "../../_components/personal-preview-shell";
+import { WorkoutBuilderPreview } from "./_components/workout-builder-preview";
 
 export const metadata: Metadata = {
   title: "Cadastro de Treino",
@@ -14,12 +11,5 @@ export const metadata: Metadata = {
 };
 
 export default function NewWorkoutPage() {
-  return (
-    <PersonalPreviewShell active="treinos">
-      <MockupContentFrame
-        src="/mockups/Personal_workout_builder.html"
-        title="Cadastro de Treino"
-      />
-    </PersonalPreviewShell>
-  );
+  return <WorkoutBuilderPreview />;
 }
