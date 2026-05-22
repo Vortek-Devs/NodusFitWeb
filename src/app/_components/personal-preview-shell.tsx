@@ -127,7 +127,7 @@ export function MockupContentFrame({
   title: string;
 }) {
   return (
-    <div className="h-dvh overflow-hidden bg-[#07100D]">
+    <div className="h-[calc(100dvh-72px)] overflow-hidden bg-[#07100D] lg:h-dvh">
       <iframe
         className={`block h-full border-0 bg-[#07100D] ${
           hideMockSidebar ? "w-[calc(100%+228px)] -translate-x-[228px]" : "w-full"

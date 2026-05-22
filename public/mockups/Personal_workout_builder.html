@@ -10,7 +10,7 @@
 <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@tabler/icons-webfont@3.19.0/dist/tabler-icons.min.css">
 <style>
 *,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
-html{scroll-behavior:smooth}
+html{scroll-behavior:smooth;max-width:100%;overflow-x:hidden}
 
 :root{
   --mint:#3DD9A4;--mint-mid:rgba(61,217,164,.18);--mint-dim:rgba(61,217,164,.08);
@@ -24,7 +24,7 @@ html{scroll-behavior:smooth}
   --sidebar:280px;--panel:340px;
 }
 
-body{font-family:var(--ff-b);background:var(--bg);color:var(--t1);-webkit-font-smoothing:antialiased;overflow-x:hidden;min-height:100vh}
+body{font-family:var(--ff-b);background:var(--bg);color:var(--t1);-webkit-font-smoothing:antialiased;overflow-x:hidden;min-height:100vh;width:100%;max-width:100%}
 
 /* ── TOPBAR ── */
 .topbar{
@@ -340,13 +340,29 @@ textarea.field-input{resize:vertical;min-height:72px;line-height:1.55}
 /* ── MOBILE ── */
 @media(max-width:1024px){
   :root{--sidebar:100%;--panel:100%}
-  .layout{flex-direction:column;height:auto;overflow:visible;padding-top:56px}
+  body{min-height:100dvh}
+  .layout{flex-direction:column;min-height:100dvh;height:auto;overflow:visible;padding-top:56px;padding-bottom:18px}
   .sidebar,.panel{width:100%;border-right:none;border-left:none;border-bottom:1px solid var(--bd);height:auto}
   .sidebar{order:2}
   .panel{order:3;max-height:420px}
-  .main{order:1;overflow:visible;height:auto}
-  .main-scroll{overflow:visible;height:auto;padding:18px 16px}
+  .main{order:1;overflow:visible;height:auto;min-width:0}
+  .main-scroll{overflow:visible;height:auto;padding:18px 16px 10px}
   .topbar-actions .btn-ghost{display:none}
+  .topbar-center{min-width:0}
+  .topbar-title,.topbar-sub{white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+  .day-header{align-items:flex-start;flex-direction:column;gap:8px}
+  .day-title-input{width:100%;font-size:18px}
+  .ex-card,.cardio-block,.add-ex-zone{max-width:100%}
+  .ex-header{align-items:flex-start;gap:9px;padding:13px 12px}
+  .ex-drag{display:none}
+  .ex-actions{gap:5px}
+  .ex-action{width:30px;height:30px}
+  .ex-chevron{padding-top:8px}
+  .ex-body{padding:0 12px 14px}
+  .cardio-block{align-items:flex-start}
+  .cardio-info{min-width:0}
+  .cardio-name,.cardio-meta{overflow:hidden;text-overflow:ellipsis}
+  .panel-list{max-height:280px}
   .sets-header,.set-row{grid-template-columns:24px 1fr 1fr 1fr 68px 24px;gap:4px}
 }
 
@@ -358,6 +374,30 @@ textarea.field-input{resize:vertical;min-height:72px;line-height:1.55}
 }
 
 @media(max-width:480px){
+  .topbar{padding:0 10px;gap:8px}
+  .topbar-back{width:32px;height:32px}
+  .topbar-actions{gap:6px}
+  .progress-ring{display:none}
+  .btn-primary{min-width:42px;min-height:36px;padding:8px 11px}
+  .btn-primary i{font-size:17px}
+  .btn-primary{font-size:0;gap:0}
+  .main-scroll{padding:14px 10px 8px}
+  .sidebar-scroll{padding:16px 10px}
+  .panel-head{padding:14px 10px 10px}
+  .panel-list{padding:6px}
+  .day-badge{font-size:10px;padding:4px 9px}
+  .day-title-input{font-size:17px}
+  .ex-header{gap:7px;padding:12px 10px}
+  .ex-num{width:18px}
+  .ex-actions{flex-direction:column}
+  .ex-action{width:28px;height:28px}
+  .ex-chevron{padding-top:4px}
+  .ex-name{font-size:13px}
+  .ex-meta{font-size:10.5px}
+  .muscle-tag{font-size:9px;padding:2px 6px}
+  .superset-band{margin:14px 0 10px;padding:0 2px}
+  .add-ex-zone{padding:16px 12px}
+  .cardio-block{padding:12px 10px;gap:9px}
   .sets-header,.set-row{grid-template-columns:24px 1fr 1fr 60px 22px;gap:3px}
   .sets-header .sh-rest,.set-row .set-rest{display:none}
   .topbar-title{font-size:13px}
