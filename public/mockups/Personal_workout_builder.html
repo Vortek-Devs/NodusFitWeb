@@ -329,16 +329,23 @@ textarea.field-input{resize:vertical;min-height:72px;line-height:1.55}
 .empty-s{font-size:12px;margin-top:4px}
 
 /* ── MOBILE ── */
-@media(max-width:768px){
+@media(max-width:1024px){
   :root{--sidebar:100%;--panel:100%}
   .layout{flex-direction:column;height:auto;overflow:visible;padding-top:56px}
   .sidebar,.panel{width:100%;border-right:none;border-left:none;border-bottom:1px solid var(--bd);height:auto}
   .sidebar{order:2}
-  .panel{order:3;max-height:380px}
+  .panel{order:3;max-height:420px}
   .main{order:1;overflow:visible;height:auto}
-  .main-scroll{overflow:visible;height:auto;padding:16px 14px}
+  .main-scroll{overflow:visible;height:auto;padding:18px 16px}
   .topbar-actions .btn-ghost{display:none}
   .sets-header,.set-row{grid-template-columns:24px 1fr 1fr 1fr 68px 24px;gap:4px}
+}
+
+@media(min-width:769px) and (max-width:1024px){
+  .sidebar-scroll{display:grid;grid-template-columns:minmax(260px,1fr) minmax(260px,1fr);gap:18px;align-items:start}
+  .field-group{margin-bottom:16px}
+  .divider{display:none}
+  .day-tabs,.day-add{grid-column:1/-1}
 }
 
 @media(max-width:480px){

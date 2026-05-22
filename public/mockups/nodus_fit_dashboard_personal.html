@@ -537,6 +537,75 @@ body{
 @media(prefers-reduced-motion:reduce){
   *,*::before,*::after{animation-duration:.01ms!important;transition-duration:.01ms!important}
 }
+
+@media(max-width:1180px){
+  .page{max-width:none}
+  .stats-row{grid-template-columns:repeat(2,minmax(0,1fr))}
+  .main-grid{grid-template-columns:1fr}
+  .right-col{display:grid;grid-template-columns:repeat(2,minmax(0,1fr))}
+  .right-col .card:last-child{grid-column:1/-1}
+}
+
+@media(max-width:900px){
+  body{display:block;padding-bottom:64px}
+  .sidebar{
+    top:auto;right:0;bottom:0;
+    width:100%;min-height:64px;height:64px;
+    border-right:none;border-top:1px solid var(--bd);
+    flex-direction:row;
+  }
+  .sb-logo,.sb-profile,.sb-section{display:none}
+  .sb-nav{
+    width:100%;padding:8px 10px;
+    flex-direction:row;justify-content:space-around;gap:4px;
+    overflow-x:auto;overflow-y:hidden;
+  }
+  .sb-item{
+    min-width:68px;flex:1;justify-content:center;gap:4px;
+    padding:7px 6px;font-size:10.5px;line-height:1.1;
+    flex-direction:column;text-align:center;
+  }
+  .sb-item.active::before{
+    left:20%;right:20%;top:auto;bottom:0;
+    width:auto;height:3px;border-radius:2px 2px 0 0;
+  }
+  .sb-item i{width:auto;font-size:19px}
+  .sb-badge{position:absolute;top:4px;right:10px;margin-left:0;padding:1px 5px;font-size:9px}
+  .main{margin-left:0;min-height:calc(100dvh - 64px)}
+  .topbar{padding:0 18px}
+  .topbar-date{display:none}
+  .page{padding:20px;gap:18px}
+  .stat-card{padding:16px}
+  .stat-val{font-size:28px}
+}
+
+@media(max-width:720px){
+  .right-col{display:flex}
+  .topbar{gap:10px}
+  .tb-cta{padding:8px 12px;font-size:12px}
+  .tb-cta span{display:none}
+  .card-head{padding:16px}
+  .filter-tabs{padding:12px 16px 0;overflow-x:auto}
+  .search-wrap{padding:12px 16px}
+  .student-row,.activity-item{padding:13px 16px}
+  .s-adherence{display:none}
+  .fin-row{grid-template-columns:1fr}
+  .modal-input-row{grid-template-columns:1fr}
+}
+
+@media(max-width:520px){
+  .stats-row{grid-template-columns:1fr}
+  .page{padding:16px}
+  .topbar-actions{gap:6px}
+  .tb-btn{display:none}
+  .tb-btn:first-child{display:flex}
+  .student-row{gap:10px}
+  .s-meta{display:block;line-height:1.35}
+  .s-dot-sep{display:none}
+  .qa-grid{grid-template-columns:1fr}
+  .toast-wrap{left:16px;right:16px;bottom:80px}
+  .toast{min-width:0;max-width:none}
+}
 </style>
 </head>
 <body>
