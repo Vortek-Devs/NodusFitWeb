@@ -1,8 +1,5 @@
 import type { Metadata } from "next";
-import {
-  MockupContentFrame,
-  PersonalPreviewShell,
-} from "../_components/personal-preview-shell";
+import { DashboardPreview } from "./_components/dashboard-preview";
 
 export const metadata: Metadata = {
   title: "Dashboard do Personal",
@@ -14,13 +11,5 @@ export const metadata: Metadata = {
 };
 
 export default function DashboardPage() {
-  return (
-    <PersonalPreviewShell active="dashboard">
-      <MockupContentFrame
-        hideMockSidebar
-        src="/mockups/nodus_fit_dashboard_personal.html"
-        title="Dashboard do Personal"
-      />
-    </PersonalPreviewShell>
-  );
+  return <DashboardPreview />;
 }

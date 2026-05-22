@@ -80,6 +80,31 @@ export function PersonalPreviewShell({
   );
 }
 
+export function PersonalPreviewPage({
+  children,
+  topbar,
+}: {
+  children: React.ReactNode;
+  topbar: React.ReactNode;
+}) {
+  return (
+    <section className="min-h-dvh min-w-0 bg-[radial-gradient(rgba(61,217,164,0.035)_1px,transparent_1px)] [background-size:22px_22px]">
+      {topbar}
+      <div className="mx-auto w-full max-w-[1280px] px-4 py-5 sm:px-6 lg:px-8 lg:py-7">
+        {children}
+      </div>
+    </section>
+  );
+}
+
+export function PersonalPreviewTopbar({ children }: { children: React.ReactNode }) {
+  return (
+    <header className="sticky top-0 z-10 border-b border-[#1C3529] bg-[#07100D]/95 px-4 py-3 backdrop-blur-xl sm:px-6 lg:px-8">
+      <div className="mx-auto flex w-full max-w-[1280px] flex-col gap-4">{children}</div>
+    </header>
+  );
+}
+
 export function MockupContentFrame({
   hideMockSidebar = false,
   src,
