@@ -1,7 +1,6 @@
 import {
   IconAlertCircle,
   IconAlertTriangle,
-  IconBarbell,
   IconCash,
   IconChartBar,
   IconCheck,
@@ -9,10 +8,7 @@ import {
   IconChevronRight,
   IconClock,
   IconDeviceFloppy,
-  IconFileText,
   IconHistory,
-  IconLayoutDashboard,
-  IconMessageCircle,
   IconPencil,
   IconPlus,
   IconReceipt,
@@ -20,10 +16,10 @@ import {
   IconSearch,
   IconSettings,
   IconTrendingUp,
-  IconUsers,
   IconX,
 } from "@tabler/icons-react";
 import type { ComponentType } from "react";
+import { PersonalPreviewShell } from "../../_components/personal-preview-shell";
 
 type FinancePreviewVariant =
   | "config"
@@ -41,15 +37,6 @@ interface IconProps {
 }
 
 type IconLike = ComponentType<IconProps>;
-
-const navItems = [
-  { icon: IconLayoutDashboard, label: "Dashboard" },
-  { badge: "2", icon: IconUsers, label: "Alunos" },
-  { icon: IconBarbell, label: "Treinos" },
-  { active: true, icon: IconReceipt, label: "Financeiro" },
-  { icon: IconMessageCircle, label: "Mensagens" },
-  { icon: IconFileText, label: "Relatorios" },
-];
 
 const summaryCards = [
   {
@@ -179,75 +166,24 @@ export function FinancialPreview({
   const showConfig = variant === "config";
 
   return (
-    <main className="min-h-dvh bg-[#07100D] text-[#E6F7F0]">
-      <div className="flex min-h-dvh">
-        <FinanceSidebar />
-        <section className="min-w-0 flex-1 bg-[radial-gradient(rgba(61,217,164,0.035)_1px,transparent_1px)] [background-size:22px_22px] lg:ml-[220px]">
-          <FinanceTopbar />
-          <div className="mx-auto w-full max-w-[1280px] px-4 py-5 sm:px-6 lg:px-8 lg:py-7">
-            {variant === "loading" ? (
-              <FinanceLoadingState />
-            ) : variant === "empty" ? (
-              <FinanceEmptyState />
-            ) : (
-              <FinanceLoadedState />
-            )}
-          </div>
-        </section>
-      </div>
+    <PersonalPreviewShell active="financeiro">
+      <section className="min-h-dvh min-w-0 bg-[radial-gradient(rgba(61,217,164,0.035)_1px,transparent_1px)] [background-size:22px_22px]">
+        <FinanceTopbar />
+        <div className="mx-auto w-full max-w-[1280px] px-4 py-5 sm:px-6 lg:px-8 lg:py-7">
+          {variant === "loading" ? (
+            <FinanceLoadingState />
+          ) : variant === "empty" ? (
+            <FinanceEmptyState />
+          ) : (
+            <FinanceLoadedState />
+          )}
+        </div>
+      </section>
 
       {showDrawer ? <FinanceDrawer /> : null}
       {showPayment ? <PaymentModal /> : null}
       {showConfig ? <ConfigModal /> : null}
-    </main>
-  );
-}
-
-function FinanceSidebar() {
-  return (
-    <aside className="fixed inset-y-0 left-0 z-20 hidden w-[220px] flex-col border-r border-[#1C3529] bg-[#0D1A15] px-2 py-5 lg:flex">
-      <div className="flex items-center gap-3 px-3 pb-6">
-        <div className="grid size-8 place-items-center rounded-lg bg-[#3DD9A4] text-[#04342C]">
-          <IconReceipt aria-hidden="true" size={17} />
-        </div>
-        <span className="font-[var(--font-syne)] text-sm font-extrabold tracking-[0.04em]">
-          NODUS <span className="text-[#3DD9A4]">FIT</span>
-        </span>
-      </div>
-
-      <nav className="flex flex-1 flex-col gap-1" aria-label="Menu do personal">
-        {navItems.map((item) => {
-          const Icon = item.icon;
-          return (
-            <a
-              className={`flex items-center gap-3 rounded-xl px-3 py-2.5 text-sm transition ${
-                item.active
-                  ? "border border-[#3DD9A4]/25 bg-[#3DD9A4]/10 text-[#3DD9A4]"
-                  : "text-[#4A7868] hover:bg-[#122019] hover:text-[#89BBAA]"
-              }`}
-              href={item.active ? "/financeiro" : "#"}
-              key={item.label}
-            >
-              <Icon aria-hidden="true" size={20} stroke={1.8} />
-              <span>{item.label}</span>
-              {"badge" in item ? (
-                <span className="ml-auto rounded-full bg-[#E05050] px-1.5 text-[10px] font-bold text-white">
-                  {item.badge}
-                </span>
-              ) : null}
-            </a>
-          );
-        })}
-      </nav>
-
-      <div className="flex items-center gap-3 border-t border-[#1C3529] px-3 pt-4">
-        <Avatar initials="MP" tone="mint" />
-        <div>
-          <p className="text-sm font-semibold text-[#89BBAA]">Marcos Pereira</p>
-          <p className="text-xs text-[#4A7868]">Plano Pro</p>
-        </div>
-      </div>
-    </aside>
+    </PersonalPreviewShell>
   );
 }
 

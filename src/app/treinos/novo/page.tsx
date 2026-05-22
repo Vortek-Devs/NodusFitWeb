@@ -1,4 +1,8 @@
 import type { Metadata } from "next";
+import {
+  MockupContentFrame,
+  PersonalPreviewShell,
+} from "../../_components/personal-preview-shell";
 
 export const metadata: Metadata = {
   title: "Cadastro de Treino",
@@ -11,10 +15,11 @@ export const metadata: Metadata = {
 
 export default function NewWorkoutPage() {
   return (
-    <iframe
-      className="block h-dvh w-full border-0 bg-[#07100D]"
-      src="/mockups/Personal_workout_builder.html"
-      title="Cadastro de Treino"
-    />
+    <PersonalPreviewShell active="treinos">
+      <MockupContentFrame
+        src="/mockups/Personal_workout_builder.html"
+        title="Cadastro de Treino"
+      />
+    </PersonalPreviewShell>
   );
 }
