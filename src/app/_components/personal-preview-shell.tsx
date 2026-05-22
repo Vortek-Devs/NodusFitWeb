@@ -14,8 +14,9 @@ import {
   IconUsers,
   IconX,
 } from "@tabler/icons-react";
+import { usePathname } from "next/navigation";
 import type { ComponentType } from "react";
-import { useState } from "react";
+import { useEffect, useRef, useState } from "react";
 
 type PersonalSection = "dashboard" | "financeiro" | "treinos";
 
@@ -74,7 +75,16 @@ export function PersonalPreviewShell({
   active: PersonalSection;
   children: React.ReactNode;
 }) {
+  const pathname = usePathname();
+  const previousPathname = useRef(pathname);
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
+
+  useEffect(() => {
+    if (previousPathname.current !== pathname) {
+      setIsMobileMenuOpen(false);
+      previousPathname.current = pathname;
+    }
+  }, [pathname]);
 
   return (
     <main className="min-h-dvh overflow-x-hidden bg-[#07100D] text-[#E6F7F0]">
@@ -156,7 +166,7 @@ function PersonalMobileMenu({
         aria-label="Menu principal"
       >
         <div className="flex items-start justify-between gap-3">
-          <PersonalBrand />
+          <PersonalBrand onNavigate={onClose} />
           <button
             className="mr-2 grid size-10 place-items-center rounded-xl border border-[#233F31] text-[#89BBAA]"
             type="button"
@@ -166,7 +176,7 @@ function PersonalMobileMenu({
             <IconX aria-hidden="true" size={18} />
           </button>
         </div>
-        <PersonalNavGroups active={active} />
+        <PersonalNavGroups active={active} onNavigate={onClose} />
         <PersonalUserCard />
       </aside>
     </div>
@@ -220,9 +230,13 @@ function PersonalMobileNav({
   );
 }
 
-function PersonalBrand() {
+function PersonalBrand({ onNavigate }: { onNavigate?: () => void }) {
   return (
-    <a className="flex items-center gap-3 px-3 pb-6" href="/dashboard">
+    <a
+      className="flex items-center gap-3 px-3 pb-6"
+      href="/dashboard"
+      onClick={onNavigate}
+    >
       <div className="grid size-9 place-items-center rounded-xl bg-[#3DD9A4] text-[#04342C] transition hover:rotate-45">
         <IconTopologyStar3 aria-hidden="true" size={17} />
       </div>
@@ -233,7 +247,13 @@ function PersonalBrand() {
   );
 }
 
-function PersonalNavGroups({ active }: { active: PersonalSection }) {
+function PersonalNavGroups({
+  active,
+  onNavigate,
+}: {
+  active: PersonalSection;
+  onNavigate?: () => void;
+}) {
   return (
     <nav
       className="flex flex-1 flex-col gap-3 overflow-y-auto"
@@ -246,7 +266,12 @@ function PersonalNavGroups({ active }: { active: PersonalSection }) {
           </p>
           <div className="space-y-1">
             {group.items.map((item) => (
-              <PersonalNavItem active={active === item.key} item={item} key={item.key} />
+              <PersonalNavItem
+                active={active === item.key}
+                item={item}
+                key={item.key}
+                onNavigate={onNavigate}
+              />
             ))}
           </div>
         </div>
@@ -272,6 +297,7 @@ function PersonalUserCard() {
 function PersonalNavItem({
   active,
   item,
+  onNavigate,
 }: {
   active: boolean;
   item: {
@@ -282,6 +308,7 @@ function PersonalNavItem({
     label: string;
     mintBadge?: boolean;
   };
+  onNavigate?: () => void;
 }) {
   const Icon = item.icon;
 
@@ -293,6 +320,7 @@ function PersonalNavItem({
           : "text-[#4A7868] hover:bg-[#122019] hover:text-[#E6F7F0]"
       }`}
       href={item.href}
+      onClick={onNavigate}
     >
       {active ? (
         <span className="absolute left-0 h-5 w-0.5 rounded-r bg-[#3DD9A4]" />
