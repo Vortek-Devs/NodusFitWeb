@@ -12,6 +12,8 @@ export async function POST(request: Request) {
     return NextResponse.json({ code: "NODUS_API_NOT_CONFIGURED" }, { status: 500 });
   }
 
+  // Validamos antes de gravar o cookie para nao carregar tokens invalidos
+  // durante todo o redirect do Google.
   const validation = await fetch(
     `${apiUrl.replace(/\/$/, "")}/api/v1/invites/${encodeURIComponent(body.token)}`,
     { cache: "no-store" },
@@ -23,6 +25,7 @@ export async function POST(request: Request) {
     });
   }
 
+  // JavaScript do browser nao precisa ler este token temporario.
   const response = NextResponse.json({ valid: true });
   response.cookies.set(
     INVITE_COOKIE_NAME,

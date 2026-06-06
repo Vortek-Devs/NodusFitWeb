@@ -6,6 +6,8 @@ import { buildBackendHeaders } from "@/lib/bff/headers";
 type RouteContext = { params: Promise<{ path: string[] }> };
 
 async function proxy(request: Request, context: RouteContext) {
+  // Primeiro validamos o cookie BetterAuth no servidor. Sem sessao valida,
+  // nenhuma requisicao chega a NodusAPI.
   const requestHeaders = await headers();
   const sessionResult = await auth.api.getSession({
     headers: requestHeaders,
@@ -15,6 +17,8 @@ async function proxy(request: Request, context: RouteContext) {
     return NextResponse.json({ code: "SESSION_REQUIRED" }, { status: 401 });
   }
 
+  // O plugin entrega a credencial por um header interno. Esse valor nunca
+  // e devolvido ao browser nem armazenado em localStorage.
   const jwt = sessionResult.headers.get("set-auth-jwt");
   if (!jwt) {
     return NextResponse.json({ code: "JWT_NOT_ISSUED" }, { status: 502 });
@@ -32,6 +36,8 @@ async function proxy(request: Request, context: RouteContext) {
     `${apiUrl.replace(/\/$/, "")}/`,
   );
   const method = request.method.toUpperCase();
+  // A allowlist substitui Authorization e descarta headers de identidade
+  // forjados pelo browser.
   const response = await fetch(target, {
     method,
     headers: buildBackendHeaders(request.headers, jwt),

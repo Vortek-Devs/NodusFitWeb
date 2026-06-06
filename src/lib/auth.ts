@@ -27,6 +27,8 @@ async function hasValidStudentInviteForEmail(
   context: { request?: Request } | null,
   email: string,
 ): Promise<boolean> {
+  // O convite atravessa o redirect OAuth somente pelo cookie httpOnly.
+  // O hook consulta a API novamente para nao confiar em dados do browser.
   const token = parseCookie(
     context?.request?.headers.get("cookie") ?? null,
     INVITE_COOKIE_NAME,
@@ -128,6 +130,8 @@ export const auth = betterAuth({
   databaseHooks: {
     user: {
       create: {
+        // A role e decidida no servidor. O formulario nao consegue promover
+        // o usuario porque o campo role tambem possui input: false.
         before: async (user, context) => ({
           data: {
             ...user,
@@ -147,6 +151,8 @@ export const auth = betterAuth({
         },
       },
       jwt: {
+        // Este JWT nao substitui a sessao BetterAuth. Ele e uma credencial
+        // curta emitida para o BFF se autenticar na NodusAPI.
         issuer: process.env.BETTER_AUTH_URL,
         audience: "nodus-api",
         expirationTime: "15m",

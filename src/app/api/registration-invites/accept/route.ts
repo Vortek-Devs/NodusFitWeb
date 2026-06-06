@@ -4,12 +4,14 @@ import { auth } from "@/lib/auth";
 import { INVITE_COOKIE_NAME } from "@/lib/auth/invite-context";
 
 export async function POST() {
+  // O token retorna ao backend pelo cookie httpOnly, nao pelo body.
   const cookieStore = await cookies();
   const token = cookieStore.get(INVITE_COOKIE_NAME)?.value;
   if (!token) {
     return NextResponse.json({ code: "INVITE_TOKEN_REQUIRED" }, { status: 400 });
   }
 
+  // Aceitar o convite exige a sessao BetterAuth ja estabelecida.
   const sessionResult = await auth.api.getSession({
     headers: await headers(),
     returnHeaders: true,
@@ -40,6 +42,8 @@ export async function POST() {
     },
   });
   if (response.ok) {
+    // Depois do consumo atomico na API, o contexto temporario do OAuth
+    // nao tem mais utilidade.
     result.headers.append(
       "set-cookie",
       `${INVITE_COOKIE_NAME}=; Path=/; Max-Age=0; HttpOnly; SameSite=Lax`,
