@@ -18,7 +18,7 @@ npm ci
 ```
 
 O template aponta o BetterAuth para o PostgreSQL local do Supabase em
-`localhost:5432` e a NodusAPI para `http://localhost:5266`, perfil HTTP do
+`127.0.0.1:54322` e a NodusAPI para `http://localhost:5266`, perfil HTTP do
 backend C#. Preencha `GOOGLE_CLIENT_ID` e `GOOGLE_CLIENT_SECRET` somente quando
 for testar o OAuth do Google.
 
