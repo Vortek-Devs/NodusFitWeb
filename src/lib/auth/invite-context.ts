@@ -1,39 +1,82 @@
-export const INVITE_COOKIE_NAME = "nodus_registration_invite";
-export const INVITE_COOKIE_MAX_AGE_SECONDS = 10 * 60;
+export const INVITE_HEADER_NAME = "x-nodus-invite-token";
+const INVITE_TOKEN_PATTERN = /^[A-Za-z0-9_-]{1,128}$/;
 
-export function inviteCookieOptions(isProduction: boolean) {
-  return {
-    httpOnly: true,
-    sameSite: "lax" as const,
-    secure: isProduction,
-    path: "/",
-    maxAge: INVITE_COOKIE_MAX_AGE_SECONDS,
-  };
+export type SignupInviteContext =
+  | { status: "absent" }
+  | { status: "invalid" }
+  | { status: "present"; token: string };
+export type SignupInviteValidation = "absent" | "valid" | "invalid";
+
+export function buildOAuthSignupState(
+  intent: "personal" | "student",
+  token?: string,
+): Record<string, string> {
+  return intent === "student"
+    ? { nodusSignupIntent: intent, nodusInviteToken: token ?? "" }
+    : { nodusSignupIntent: intent };
 }
 
-export function parseCookie(header: string | null, name: string): string | null {
-  if (!header) return null;
+export function parseInviteToken(token: string): SignupInviteContext {
+  const normalized = token.trim();
+  return INVITE_TOKEN_PATTERN.test(normalized)
+    ? { status: "present", token: normalized }
+    : { status: "invalid" };
+}
 
-  for (const part of header.split(";")) {
-    const [key, ...valueParts] = part.trim().split("=");
-    if (key === name) {
-      return decodeURIComponent(valueParts.join("="));
+export function readSignupInviteContext(
+  headers: Headers | null,
+  path?: string,
+  oauthState?: unknown,
+): SignupInviteContext {
+  if (isOAuthCallback(path)) {
+    if (!isRecord(oauthState) || oauthState.requestSignUp !== true) {
+      return { status: "invalid" };
     }
+    if (
+      oauthState.nodusSignupIntent === "personal" &&
+      oauthState.nodusInviteToken === undefined
+    ) {
+      return { status: "absent" };
+    }
+    if (
+      oauthState.nodusSignupIntent === "student" &&
+      typeof oauthState.nodusInviteToken === "string"
+    ) {
+      return parseInviteToken(oauthState.nodusInviteToken);
+    }
+    return { status: "invalid" };
   }
 
+  const nativeToken = headers?.get(INVITE_HEADER_NAME) ?? null;
+  return nativeToken === null ? { status: "absent" } : parseInviteToken(nativeToken);
+}
+
+function isOAuthCallback(path?: string): boolean {
+  return Boolean(
+    path === "/callback" ||
+      path?.startsWith("/callback/") ||
+      path?.startsWith("/oauth2/callback/"),
+  );
+}
+
+function isRecord(value: unknown): value is Record<string, unknown> {
+  return Boolean(value && typeof value === "object" && !Array.isArray(value));
+}
+
+export function roleForInvite(
+  validation: SignupInviteValidation,
+): "ALUNO" | "PERSONAL" | null {
+  if (validation === "valid") return "ALUNO";
+  if (validation === "absent") return "PERSONAL";
   return null;
 }
 
-export function roleForInvite(isValidStudentInvite: boolean): "ALUNO" | "PERSONAL" {
-  return isValidStudentInvite ? "ALUNO" : "PERSONAL";
-}
-
-export function inviteMatchesSignup(
-  invite: { role?: string; email?: string },
-  signupEmail: string,
-): boolean {
+export function inviteMatchesSignup(invite: unknown, signupEmail: string): boolean {
+  if (!invite || typeof invite !== "object" || Array.isArray(invite)) return false;
+  const { role, email } = invite as Record<string, unknown>;
   return (
-    invite.role === "ALUNO" &&
-    invite.email?.trim().toLowerCase() === signupEmail.trim().toLowerCase()
+    role === "ALUNO" &&
+    typeof email === "string" &&
+    email.trim().toLowerCase() === signupEmail.trim().toLowerCase()
   );
 }

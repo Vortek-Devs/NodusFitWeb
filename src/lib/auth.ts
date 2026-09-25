@@ -1,12 +1,15 @@
+import { expo } from "@better-auth/expo";
 import { betterAuth } from "better-auth";
+import { getOAuthState } from "better-auth/api";
 import { jwt } from "better-auth/plugins";
 import { Pool } from "pg";
 import {
-  INVITE_COOKIE_NAME,
   inviteMatchesSignup,
-  parseCookie,
+  readSignupInviteContext,
   roleForInvite,
+  type SignupInviteValidation,
 } from "@/lib/auth/invite-context";
+import { sendNodusVerificationEmail } from "@/lib/auth/verification-email";
 
 const pool = new Pool({
   connectionString: process.env.DATABASE_URL,
@@ -19,42 +22,68 @@ const google =
         google: {
           clientId: process.env.GOOGLE_CLIENT_ID,
           clientSecret: process.env.GOOGLE_CLIENT_SECRET,
+          disableImplicitSignUp: true,
         },
       }
     : {};
 
-async function hasValidStudentInviteForEmail(
-  context: { request?: Request } | null,
+async function validateStudentInviteForEmail(
+  context: { path?: string; request?: Request } | null,
   email: string,
-): Promise<boolean> {
-  // O convite atravessa o redirect OAuth somente pelo cookie httpOnly.
-  // O hook consulta a API novamente para nao confiar em dados do browser.
-  const token = parseCookie(
-    context?.request?.headers.get("cookie") ?? null,
-    INVITE_COOKIE_NAME,
+): Promise<SignupInviteValidation> {
+  let oauthState: unknown;
+  if (
+    context?.path === "/callback" ||
+    context?.path?.startsWith("/callback/") ||
+    context?.path?.startsWith("/oauth2/callback/")
+  ) {
+    try {
+      oauthState = await getOAuthState();
+    } catch {
+      return "invalid";
+    }
+  }
+  const inviteContext = readSignupInviteContext(
+    context?.request?.headers ?? null,
+    context?.path,
+    oauthState,
   );
-  if (!token) return false;
+  if (inviteContext.status !== "present") return inviteContext.status;
 
   const apiUrl = process.env.NODUS_API_URL;
-  if (!apiUrl) return false;
+  if (!apiUrl) return "invalid";
 
-  const response = await fetch(
-    `${apiUrl.replace(/\/$/, "")}/api/v1/invites/${encodeURIComponent(token)}`,
-    { cache: "no-store" },
-  );
-  if (!response.ok) return false;
-
-  const invite = (await response.json()) as { role?: string; email?: string };
-  return inviteMatchesSignup(invite, email);
+  try {
+    const response = await fetch(
+      `${apiUrl.replace(/\/$/, "")}/api/v1/invites/${encodeURIComponent(inviteContext.token)}`,
+      { cache: "no-store", signal: context?.request?.signal },
+    );
+    if (!response.ok) return "invalid";
+    const invite: unknown = await response.json();
+    return inviteMatchesSignup(invite, email) ? "valid" : "invalid";
+  } catch {
+    return "invalid";
+  }
 }
 
 export const auth = betterAuth({
   appName: "NodusFit",
   baseURL: process.env.BETTER_AUTH_URL,
   secret: process.env.BETTER_AUTH_SECRET,
+  trustedOrigins: [process.env.NODUS_MOBILE_SCHEME ?? "nodusfit://"],
   database: pool,
   emailAndPassword: {
     enabled: true,
+    requireEmailVerification: true,
+  },
+  emailVerification: {
+    sendOnSignUp: true,
+    sendOnSignIn: true,
+    autoSignInAfterVerification: true,
+    expiresIn: 60 * 60,
+    sendVerificationEmail: async ({ user, url }) => {
+      await sendNodusVerificationEmail({ email: user.email, url });
+    },
   },
   socialProviders: google,
   account: {
@@ -132,18 +161,25 @@ export const auth = betterAuth({
       create: {
         // A role e decidida no servidor. O formulario nao consegue promover
         // o usuario porque o campo role tambem possui input: false.
-        before: async (user, context) => ({
-          data: {
-            ...user,
-            role: roleForInvite(await hasValidStudentInviteForEmail(context, user.email)),
-            isActive: true,
-            isBanned: false,
-          },
-        }),
+        before: async (user, context) => {
+          const role = roleForInvite(
+            await validateStudentInviteForEmail(context, user.email),
+          );
+          if (!role) return false;
+          return {
+            data: {
+              ...user,
+              role,
+              isActive: true,
+              isBanned: false,
+            },
+          };
+        },
       },
     },
   },
   plugins: [
+    expo(),
     jwt({
       jwks: {
         keyPairConfig: {
