@@ -1,5 +1,10 @@
 This is a [Next.js](https://nextjs.org) project bootstrapped with [`create-next-app`](https://nextjs.org/docs/app/api-reference/cli/create-next-app).
 
+## Authentication architecture
+
+The BetterAuth, Google OAuth, invite-cookie and NodusAPI BFF flows are documented
+in [`docs/auth-flow.md`](docs/auth-flow.md).
+
 ## Getting Started
 
 First, run the development server:
