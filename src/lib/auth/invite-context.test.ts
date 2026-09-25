@@ -37,6 +37,12 @@ describe("invite context", () => {
     ).toBe("abc 123");
   });
 
+  it("treats malformed percent-encoded invite cookies as absent", () => {
+    expect(
+      parseCookie("nodus_registration_invite=%", "nodus_registration_invite"),
+    ).toBeNull();
+  });
+
   it("keeps the OAuth invite cookie short-lived", () => {
     expect(INVITE_COOKIE_MAX_AGE_SECONDS).toBe(600);
     expect(inviteCookieOptions(true)).toMatchObject({
