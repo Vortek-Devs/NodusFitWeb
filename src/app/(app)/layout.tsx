@@ -5,9 +5,15 @@ import { requirePersonalAccess } from "@/lib/auth/personal-access";
 
 export default async function PersonalAppLayout({ children }: { children: ReactNode }) {
   const identity = await requirePersonalAccess();
+  const todayLabel = new Intl.DateTimeFormat("pt-BR", {
+    dateStyle: "full",
+    timeZone: "America/Sao_Paulo",
+  }).format(new Date());
   return (
     <QueryProvider key={identity.userId}>
-      <PersonalAppShell identity={identity}>{children}</PersonalAppShell>
+      <PersonalAppShell identity={identity} todayLabel={todayLabel}>
+        {children}
+      </PersonalAppShell>
     </QueryProvider>
   );
 }

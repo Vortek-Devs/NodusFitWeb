@@ -1,6 +1,5 @@
 import {
   IconAlertTriangle,
-  IconBell,
   IconChartBar,
   IconChevronRight,
   IconCoin,
@@ -18,7 +17,7 @@ import {
   PersonalPreviewPage,
   PersonalPreviewShell,
   PersonalPreviewTopbar,
-} from "../../_components/personal-preview-shell";
+} from "../../../_components/personal-preview-shell";
 
 interface IconProps {
   "aria-hidden"?: boolean | "true" | "false";
@@ -107,6 +106,15 @@ export function DashboardPreview() {
     <PersonalPreviewShell active="dashboard">
       <PersonalPreviewPage topbar={<DashboardTopbar />}>
         <div className="space-y-6">
+          <div
+            className="flex flex-col gap-1 rounded-xl border border-[#3DD9A4]/25 bg-[#3DD9A4]/10 px-4 py-3 text-sm sm:flex-row sm:items-center sm:gap-3"
+            role="note"
+          >
+            <strong className="shrink-0 text-[#3DD9A4]">Demonstração</strong>
+            <span className="text-[#89BBAA]">
+              Dados ilustrativos; interações indisponíveis nesta tela.
+            </span>
+          </div>
           <StatsGrid />
           <div className="grid min-w-0 gap-6 xl:grid-cols-[minmax(0,1.55fr)_minmax(320px,0.7fr)]">
             <div className="min-w-0 space-y-6">
@@ -139,15 +147,13 @@ function DashboardTopbar() {
           <span className="mr-1 hidden text-sm text-[#4A7868] lg:inline">
             sexta-feira, 22 de maio de 2026
           </span>
-          <IconButton icon={IconBell} label="Notificacoes" />
-          <IconButton icon={IconSearch} label="Buscar" />
-          <a
-            className="inline-flex min-h-10 items-center justify-center gap-2 rounded-xl bg-[#3DD9A4] px-4 text-sm font-bold text-[#04342C] shadow-[0_10px_28px_rgba(61,217,164,0.16)]"
-            href="/treinos/novo"
+          <span
+            aria-disabled="true"
+            className="inline-flex min-h-10 items-center justify-center gap-2 rounded-xl border border-[#1C3529] px-4 text-sm font-semibold text-[#4A7868]"
           >
             <IconPlus aria-hidden="true" size={17} />
-            Novo treino
-          </a>
+            Novo treino <span className="text-[10px] uppercase">Planejado</span>
+          </span>
         </div>
       </div>
     </PersonalPreviewTopbar>
@@ -269,23 +275,24 @@ function StudentsPanel() {
           size={17}
         />
         <input
-          className="h-11 w-full rounded-2xl border border-[#233F31] bg-[#122019] pl-10 pr-4 text-sm text-[#E6F7F0] outline-none placeholder:text-[#4A7868]"
+          aria-label="Busca indisponível na demonstração"
+          className="h-11 w-full rounded-2xl border border-[#233F31] bg-[#122019] pl-10 pr-4 text-sm text-[#E6F7F0] outline-none placeholder:text-[#4A7868] disabled:cursor-not-allowed disabled:opacity-70"
           placeholder="Buscar aluno..."
-          readOnly
+          disabled
           value=""
         />
       </label>
       <div className="mb-4 flex flex-wrap gap-2">
         {["Todos", "Atencao", "Em dia"].map((tab, index) => (
-          <button
+          <span
+            aria-disabled="true"
             className={`rounded-xl px-3 py-2 text-xs font-bold ${
               index === 0 ? "bg-[#122019] text-[#E6F7F0]" : "text-[#4A7868]"
             }`}
-            type="button"
             key={tab}
           >
             {tab}
-          </button>
+          </span>
         ))}
       </div>
       <div className="divide-y divide-[#1C3529]">
@@ -328,19 +335,17 @@ function StudentRow({ student }: { student: (typeof students)[number] }) {
 function QuickActions() {
   const actions = [
     {
-      href: "/treinos/novo",
       icon: IconWeight,
       label: "Novo treino",
       meta: "Criar plano",
     },
     {
-      href: "/acesso/aluno-preview",
       icon: IconUserPlus,
       label: "Convidar aluno",
       meta: "Gerar link",
     },
-    { href: "#", icon: IconFileText, label: "Relatorio PDF", meta: "Exportar agora" },
-    { href: "/financeiro", icon: IconChartBar, label: "Financeiro", meta: "3 em atraso" },
+    { icon: IconFileText, label: "Relatório PDF", meta: "Exportar agora" },
+    { icon: IconChartBar, label: "Financeiro", meta: "3 em atraso" },
   ];
 
   return (
@@ -349,15 +354,15 @@ function QuickActions() {
         {actions.map((action) => {
           const Icon = action.icon;
           return (
-            <a
-              className="rounded-2xl border border-[#1C3529] bg-[#122019] p-4 transition hover:border-[#3DD9A4]/35 hover:text-[#3DD9A4]"
-              href={action.href}
+            <article
+              aria-disabled="true"
+              className="rounded-2xl border border-[#1C3529] bg-[#122019] p-4"
               key={action.label}
             >
               <Icon aria-hidden="true" className="mb-3 text-[#3DD9A4]" size={20} />
               <p className="text-sm font-bold">{action.label}</p>
-              <p className="mt-1 text-xs text-[#4A7868]">{action.meta}</p>
-            </a>
+              <p className="mt-1 text-xs text-[#4A7868]">{action.meta} · indisponível</p>
+            </article>
           );
         })}
       </div>
@@ -367,12 +372,7 @@ function QuickActions() {
 
 function FinancialPanel() {
   return (
-    <Panel
-      action="Detalhes"
-      href="/financeiro"
-      subtitle="Outubro 2026"
-      title="Financeiro"
-    >
+    <Panel action="Detalhes" subtitle="Outubro 2026" title="Financeiro">
       <div className="grid gap-3 sm:grid-cols-2">
         <MiniMetric label="Recebido" tone="mint" value="R$2.940" />
         <MiniMetric label="Em atraso" tone="red" value="R$420" />
@@ -414,7 +414,7 @@ function ActivityPanel() {
 function Panel({
   action,
   children,
-  href = "#",
+  href,
   subtitle,
   title,
 }: {
@@ -433,14 +433,21 @@ function Panel({
           </h2>
           {subtitle ? <p className="mt-0.5 text-xs text-[#4A7868]">{subtitle}</p> : null}
         </div>
-        {action ? (
+        {action && href ? (
           <a
-            className="inline-flex shrink-0 items-center gap-1 text-xs font-bold text-[#3DD9A4]"
+            className="inline-flex min-h-11 shrink-0 items-center gap-1 text-xs font-bold text-[#3DD9A4]"
             href={href}
           >
             {action}
             <IconChevronRight aria-hidden="true" size={14} />
           </a>
+        ) : action ? (
+          <span
+            aria-disabled="true"
+            className="inline-flex min-h-11 items-center text-xs text-[#4A7868]"
+          >
+            {action} · indisponível
+          </span>
         ) : null}
       </header>
       <div className="p-5">{children}</div>
@@ -466,17 +473,5 @@ function MiniMetric({
       </p>
       <p className="mt-1 text-xs uppercase tracking-[0.08em] text-[#4A7868]">{label}</p>
     </div>
-  );
-}
-
-function IconButton({ icon: Icon, label }: { icon: IconLike; label: string }) {
-  return (
-    <button
-      className="grid size-10 place-items-center rounded-xl border border-[#233F31] bg-[#122019] text-[#89BBAA] transition hover:border-[#3DD9A4]/35 hover:text-[#3DD9A4]"
-      type="button"
-      aria-label={label}
-    >
-      <Icon aria-hidden="true" size={18} />
-    </button>
   );
 }

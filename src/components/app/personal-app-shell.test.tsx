@@ -35,10 +35,13 @@ describe("PersonalAppShell", () => {
       expect(studentsLink).toHaveAttribute("aria-current", "page");
       expect(exercisesLink).toHaveAttribute("href", "/exercicios");
       expect(exercisesLink).not.toHaveAttribute("aria-current");
-      expect(within(nav).getAllByRole("link")).toHaveLength(2);
+      expect(within(nav).getAllByRole("link")).toHaveLength(3);
     }
     expect(within(screen.getByRole("banner")).getByText("Alunos")).toBeInTheDocument();
-    expect(screen.getByText(identity.email)).toBeInTheDocument();
+    expect(screen.getAllByText(identity.email)).toHaveLength(3);
+    for (const email of screen.getAllByText(identity.email)) {
+      expect(email).toHaveClass("text-ink-secondary");
+    }
     expect(screen.getAllByText(identity.name).length).toBeGreaterThan(0);
     expect(screen.getByRole("link", { name: "Pular para o conteúdo" })).toHaveAttribute(
       "href",
@@ -59,7 +62,7 @@ describe("PersonalAppShell", () => {
       const exercisesLink = within(nav).getByRole("link", { name: "Exercícios" });
       expect(studentsLink).not.toHaveAttribute("aria-current");
       expect(exercisesLink).toHaveAttribute("aria-current", "page");
-      expect(within(nav).getAllByRole("link")).toHaveLength(2);
+      expect(within(nav).getAllByRole("link")).toHaveLength(3);
     }
     expect(
       within(screen.getByRole("banner")).getByText("Exercícios"),
@@ -86,5 +89,52 @@ describe("PersonalAppShell", () => {
       }
       unmount();
     }
+  });
+
+  it("renders the richer grouped sidebar and contextual dashboard topbar", () => {
+    pathname.mockReturnValue("/dashboard");
+    render(
+      <PersonalAppShell
+        identity={identity}
+        todayLabel="sexta-feira, 25 de setembro de 2026"
+      >
+        <h1>Painel pessoal</h1>
+      </PersonalAppShell>,
+    );
+
+    for (const nav of screen.getAllByRole("navigation")) {
+      const dashboardLink = within(nav).getByRole("link", { name: "Painel" });
+      expect(dashboardLink).toHaveAttribute("href", "/dashboard");
+      expect(dashboardLink).toHaveAttribute("aria-current", "page");
+      expect(within(nav).getAllByRole("link")).toHaveLength(3);
+    }
+
+    const banner = screen.getByRole("banner");
+    expect(within(banner).getByText("Visão geral")).toBeInTheDocument();
+    expect(
+      within(banner).getByText("sexta-feira, 25 de setembro de 2026"),
+    ).toBeInTheDocument();
+    expect(within(banner).getAllByText(identity.name)).toHaveLength(2);
+    const mobileIdentity = screen.getByTestId("mobile-identity");
+    expect(within(mobileIdentity).getByText(identity.name)).toBeInTheDocument();
+    expect(within(mobileIdentity).getByText(identity.email)).toBeInTheDocument();
+    expect(
+      within(banner).getByRole("link", { name: "Cadastrar exercício" }),
+    ).toHaveAttribute("href", "/exercicios/novo");
+    for (const label of ["Treinos", "Financeiro", "Mensagens"]) {
+      const plannedItem = screen.getByText(label);
+      expect(plannedItem.closest("a")).toBeNull();
+      expect(plannedItem.parentElement).toHaveTextContent("Planejado");
+    }
+  });
+
+  it.each([
+    "/alunos",
+    "/exercicios",
+    "/exercicios/novo",
+  ])("does not show the dashboard-only create CTA on %s", (path) => {
+    pathname.mockReturnValue(path);
+    render(<PersonalAppShell identity={identity}>Conteúdo</PersonalAppShell>);
+    expect(screen.queryByRole("link", { name: "Cadastrar exercício" })).toBeNull();
   });
 });
