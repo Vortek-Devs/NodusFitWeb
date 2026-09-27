@@ -37,6 +37,11 @@ export function StudentDetailClient({ studentId }: { studentId: string }) {
             <h1 className="mt-1 break-words text-2xl font-bold text-ink-primary">
               {student.name}
             </h1>
+            <Button className="mt-4" asChild>
+              <Link href={`/treinos/novo?studentId=${encodeURIComponent(student.id)}`}>
+                Criar plano de treino
+              </Link>
+            </Button>
             <div className="mt-3">
               <StudentStatusBadge status={student.status} />
             </div>
