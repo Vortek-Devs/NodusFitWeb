@@ -40,14 +40,13 @@ const navigationGroups = [
       { href: "/dashboard", icon: IconLayoutDashboard, label: "Dashboard" },
       { href: "/alunos", icon: IconUsers, label: "Alunos" },
       { href: "/exercicios", icon: IconBarbell, label: "Exercícios" },
-      { icon: IconBarbell, label: "Treinos", planned: true },
+      { href: "/treinos", icon: IconBarbell, label: "Treinos" },
       { icon: IconChartBar, label: "Relatórios", planned: true },
     ],
     label: "Principal",
   },
   {
     items: [
-      { icon: IconBarbell, label: "Treinos", planned: true },
       { icon: IconReceipt, label: "Financeiro", planned: true },
       { icon: IconMessageCircle, label: "Mensagens", planned: true },
       { icon: IconCalendar, label: "Agenda", planned: true },
@@ -68,6 +67,7 @@ const mobileNavigation = [
   { href: "/dashboard", icon: IconLayoutDashboard, label: "Dashboard" },
   { href: "/alunos", icon: IconUsers, label: "Alunos" },
   { href: "/exercicios", icon: IconBarbell, label: "Exercícios" },
+  { href: "/treinos", icon: IconBarbell, label: "Treinos" },
 ] as const;
 
 interface PersonalAppShellProps {
@@ -85,6 +85,7 @@ export function PersonalAppShell({
   const pageTitle = getPageTitle(pathname);
   const isInicio = pathname === "/inicio";
   const isExercises = pathname === "/exercicios";
+  const isTrainingPlans = pathname === "/treinos";
 
   return (
     <div className="min-h-dvh bg-page text-ink-primary">
@@ -188,6 +189,14 @@ export function PersonalAppShell({
                   <Link href="/exercicios/novo">
                     <IconPlus aria-hidden="true" size={17} stroke={1.8} />
                     Cadastrar exercício
+                  </Link>
+                </Button>
+              ) : null}
+              {isTrainingPlans ? (
+                <Button asChild className="min-h-11 shrink-0 px-3 sm:px-4">
+                  <Link href="/treinos/novo">
+                    <IconPlus aria-hidden="true" size={17} stroke={1.8} />
+                    Novo treino
                   </Link>
                 </Button>
               ) : null}
@@ -319,6 +328,7 @@ function getPageTitle(pathname: string) {
   if (pathname === "/exercicios" || pathname.startsWith("/exercicios/")) {
     return "Exercícios";
   }
+  if (pathname === "/treinos" || pathname.startsWith("/treinos/")) return "Treinos";
   return "Nodus Fit";
 }
 
