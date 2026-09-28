@@ -3110,7 +3110,7 @@ select {
   animation: auth-spin 0.8s linear infinite;
 }
 
-.auth-submit:disabled .auth-spinner {
+.auth-submit[aria-busy="true"] .auth-spinner {
   display: inline-flex;
 }
 

@@ -55,6 +55,43 @@ it("keeps role and panel tab touch targets at least 44px high", () => {
   const css = readFileSync("src/app/globals.css", "utf8");
   expect(css).toMatch(/\.auth-role-toggle button\s*\{[^}]*min-height:\s*44px;/);
   expect(css).toMatch(/\.auth-tabs button\s*\{[^}]*min-height:\s*44px;/);
+  expect(css).toMatch(/\.auth-submit\[aria-busy="true"\] \.auth-spinner\s*\{/);
+  expect(css).not.toMatch(/\.auth-submit:disabled \.auth-spinner/);
+});
+
+it("shows the submit spinner only while login is pending", async () => {
+  let rejectLogin: (reason?: unknown) => void = () => {};
+  client.signIn.email.mockReturnValue(
+    new Promise((_, reject) => {
+      rejectLogin = reject;
+    }),
+  );
+  const { container } = render(
+    <AccessAuthClient initialRole="personal" invite={{ status: "missing" }} />,
+  );
+  const spinner = container.querySelector(".auth-spinner");
+
+  expect(spinner).toBeNull();
+  fireEvent.change(screen.getByLabelText("Email profissional"), {
+    target: { value: "person@example.com" },
+  });
+  fireEvent.change(screen.getByLabelText("Senha"), {
+    target: { value: "Password1" },
+  });
+  fireEvent.click(screen.getByRole("button", { name: "Entrar no painel" }));
+
+  await waitFor(() => expect(client.signIn.email).toHaveBeenCalled());
+  const pendingButton = await screen.findByRole("button", { name: "Processando" });
+  expect(pendingButton).toBeDisabled();
+  expect(pendingButton).toHaveAttribute("aria-busy", "true");
+  expect(container.querySelector(".auth-spinner")).not.toBeNull();
+
+  await act(async () => rejectLogin(new Error("network unavailable")));
+
+  const idleButton = await screen.findByRole("button", { name: "Entrar no painel" });
+  expect(idleButton).toBeEnabled();
+  expect(idleButton).toHaveAttribute("aria-busy", "false");
+  expect(container.querySelector(".auth-spinner")).toBeNull();
 });
 
 async function login() {
