@@ -195,7 +195,7 @@ describe("email actions", () => {
   it.each([
     "email",
     "google",
-  ] as const)("sends a completed personal %s session to the protected roster", async (method) => {
+  ] as const)("sends a completed personal %s session to the protected home", async (method) => {
     fetchMock.mockResolvedValue(
       Response.json({
         user: {
@@ -223,7 +223,7 @@ describe("email actions", () => {
 
     await expect(resolveAuthenticatedAccess("person-1", method)).resolves.toMatchObject({
       status: "authenticated",
-      redirectTo: "/alunos",
+      redirectTo: "/inicio",
       authMethod: method,
     });
   });

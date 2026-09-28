@@ -284,7 +284,7 @@ export async function resolveAuthenticatedAccess(
           ? "/aluno"
           : me.onboarding.required
             ? "/onboarding"
-            : "/alunos",
+            : "/inicio",
       message: "Login confirmado.",
       authMethod,
     };
