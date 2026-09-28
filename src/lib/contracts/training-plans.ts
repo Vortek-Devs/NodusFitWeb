@@ -102,6 +102,17 @@ function isNullablePositiveInteger(value: unknown): value is number | null {
   return value === null || isPositiveInteger(value);
 }
 
+function isValidLoadKg(value: unknown): value is number | null {
+  return (
+    value === null ||
+    (typeof value === "number" &&
+      Number.isFinite(value) &&
+      value >= 0 &&
+      value <= 9_999.99 &&
+      Number(value.toFixed(2)) === value)
+  );
+}
+
 function isStatus(value: unknown): value is TrainingPlanStatus {
   return value === "DRAFT" || value === "PUBLISHED";
 }
@@ -112,10 +123,7 @@ function isPlanSet(value: unknown): value is TrainingPlanSet {
     isUuid(value.id) &&
     isPositiveInteger(value.number) &&
     isNullablePositiveInteger(value.targetRepetitions) &&
-    (value.loadKg === null ||
-      (typeof value.loadKg === "number" &&
-        Number.isFinite(value.loadKg) &&
-        value.loadKg >= 0)) &&
+    isValidLoadKg(value.loadKg) &&
     typeof value.restSeconds === "number" &&
     Number.isSafeInteger(value.restSeconds) &&
     value.restSeconds >= 0 &&
