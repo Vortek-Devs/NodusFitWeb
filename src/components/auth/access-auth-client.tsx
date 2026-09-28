@@ -875,7 +875,13 @@ function PersonalForms({
 
   if (tab === "login") {
     return (
-      <form className="auth-form" action={onLogin}>
+      <form
+        className="auth-form"
+        onSubmit={(event) => {
+          event.preventDefault();
+          void onLogin(new FormData(event.currentTarget));
+        }}
+      >
         <GoogleButton
           disabled={submitting === "personal-google-login"}
           label="Entrar com Google"
@@ -915,7 +921,13 @@ function PersonalForms({
   }
 
   return (
-    <form className="auth-form" action={onRegister}>
+    <form
+      className="auth-form"
+      onSubmit={(event) => {
+        event.preventDefault();
+        void onRegister();
+      }}
+    >
       {googlePersonal ? (
         <GoogleProfileSummary user={googlePersonal} />
       ) : (
@@ -1064,7 +1076,13 @@ function StudentForms({
 }) {
   if (tab === "login") {
     return (
-      <form className="auth-form" action={onLogin}>
+      <form
+        className="auth-form"
+        onSubmit={(event) => {
+          event.preventDefault();
+          void onLogin(new FormData(event.currentTarget));
+        }}
+      >
         <GoogleButton
           disabled={submitting === "student-google-login"}
           label="Entrar com Google"
@@ -1114,7 +1132,13 @@ function StudentForms({
         onClick={onGoogleRegister}
       />
       <Divider label="ou crie com email" tone="light" />
-      <form action={onRegister} className="auth-step">
+      <form
+        className="auth-step"
+        onSubmit={(event) => {
+          event.preventDefault();
+          void onRegister();
+        }}
+      >
         <ControlledField
           tone="light"
           id="student-name"
@@ -1551,11 +1575,12 @@ function SubmitButton({
   return (
     <button
       className={`auth-submit ${tone}`}
+      aria-busy={pending}
       disabled={disabled || pending}
       type={action ? "button" : "submit"}
       onClick={action}
     >
-      <span className="auth-spinner" aria-hidden="true" />
+      {pending ? <span className="auth-spinner" aria-hidden="true" /> : null}
       <span>
         {pending ? "Processando" : label}
         {!pending ? <IconArrowRight aria-hidden="true" /> : null}
