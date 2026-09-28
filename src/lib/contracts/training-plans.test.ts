@@ -75,4 +75,18 @@ describe("training plan contracts", () => {
       isPagedTrainingPlans({ items: [plan], page: 1, pageSize: 20, totalCount: 1 }),
     ).toBe(false);
   });
+
+  it("rejects set loads outside the API range and precision", () => {
+    for (const loadKg of [10_000, 40.001, Number.POSITIVE_INFINITY]) {
+      const malformed = structuredClone(plan);
+      malformed.days[0].exercises[0].sets[0].loadKg = loadKg;
+      expect(isTrainingPlanResponse(malformed)).toBe(false);
+    }
+  });
+
+  it("accepts the API maximum two-decimal load", () => {
+    const maximumLoad = structuredClone(plan);
+    maximumLoad.days[0].exercises[0].sets[0].loadKg = 9_999.99;
+    expect(isTrainingPlanResponse(maximumLoad)).toBe(true);
+  });
 });
