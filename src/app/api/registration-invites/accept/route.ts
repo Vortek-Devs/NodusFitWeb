@@ -1,53 +1,32 @@
-import { cookies, headers } from "next/headers";
-import { NextResponse } from "next/server";
-import { auth } from "@/lib/auth";
-import { INVITE_COOKIE_NAME } from "@/lib/auth/invite-context";
+import { parseInviteToken } from "@/lib/auth/invite-context";
+import { proxyAuthenticatedBackend } from "@/lib/bff/backend-proxy";
+import { problemResponse } from "@/lib/bff/problem-details";
 
-export async function POST() {
-  // O token retorna ao backend pelo cookie httpOnly, nao pelo body.
-  const cookieStore = await cookies();
-  const token = cookieStore.get(INVITE_COOKIE_NAME)?.value;
-  if (!token) {
-    return NextResponse.json({ code: "INVITE_TOKEN_REQUIRED" }, { status: 400 });
+export async function POST(request: Request) {
+  let body: unknown;
+  try {
+    body = await request.json();
+  } catch {
+    request.signal.throwIfAborted();
+    return problemResponse(request, 400, "INVITE_TOKEN_REQUIRED");
   }
-
-  // Aceitar o convite exige a sessao BetterAuth ja estabelecida.
-  const sessionResult = await auth.api.getSession({
-    headers: await headers(),
-    returnHeaders: true,
-  });
-  if (!sessionResult.response) {
-    return NextResponse.json({ code: "SESSION_REQUIRED" }, { status: 401 });
+  if (
+    !body ||
+    typeof body !== "object" ||
+    !("token" in body) ||
+    typeof body.token !== "string"
+  ) {
+    return problemResponse(request, 400, "INVITE_TOKEN_REQUIRED");
   }
-
-  const jwt = sessionResult.headers.get("set-auth-jwt");
-  const apiUrl = process.env.NODUS_API_URL;
-  if (!jwt || !apiUrl) {
-    return NextResponse.json({ code: "AUTH_BRIDGE_UNAVAILABLE" }, { status: 502 });
+  const invite = parseInviteToken(body.token);
+  if (invite.status !== "present") {
+    return problemResponse(request, 400, "INVITE_TOKEN_REQUIRED");
   }
-
-  const response = await fetch(
-    `${apiUrl.replace(/\/$/, "")}/api/v1/invites/${encodeURIComponent(token)}/accept`,
-    {
-      method: "POST",
-      headers: { authorization: `Bearer ${jwt}` },
-      cache: "no-store",
-    },
+  const headers = new Headers(request.headers);
+  headers.delete("content-type");
+  return proxyAuthenticatedBackend(
+    new Request(request.url, { method: "POST", headers, signal: request.signal }),
+    ["v1", "invites", invite.token, "accept"],
+    "web",
   );
-
-  const result = new Response(response.body, {
-    status: response.status,
-    headers: {
-      "content-type": response.headers.get("content-type") ?? "application/json",
-    },
-  });
-  if (response.ok) {
-    // Depois do consumo atomico na API, o contexto temporario do OAuth
-    // nao tem mais utilidade.
-    result.headers.append(
-      "set-cookie",
-      `${INVITE_COOKIE_NAME}=; Path=/; Max-Age=0; HttpOnly; SameSite=Lax`,
-    );
-  }
-  return result;
 }
