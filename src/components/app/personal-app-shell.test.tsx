@@ -41,7 +41,7 @@ describe("PersonalAppShell", () => {
       expect(exercisesLink).toHaveAttribute("href", "/exercicios");
       expect(exercisesLink).not.toHaveAttribute("aria-current");
       expect(dashboardLink).not.toHaveAttribute("aria-current");
-      expect(within(nav).getAllByRole("link")).toHaveLength(4);
+      expect(within(nav).getAllByRole("link")).toHaveLength(5);
     }
     expect(within(screen.getByRole("banner")).getByText("Alunos")).toBeInTheDocument();
     expect(screen.getAllByText(identity.email)).toHaveLength(3);
@@ -70,7 +70,7 @@ describe("PersonalAppShell", () => {
       expect(studentsLink).not.toHaveAttribute("aria-current");
       expect(exercisesLink).toHaveAttribute("aria-current", "page");
       expect(homeLink).not.toHaveAttribute("aria-current");
-      expect(within(nav).getAllByRole("link")).toHaveLength(4);
+      expect(within(nav).getAllByRole("link")).toHaveLength(5);
     }
     expect(
       within(screen.getByRole("banner")).getByText("Exercícios"),
@@ -117,7 +117,7 @@ describe("PersonalAppShell", () => {
       expect(within(nav).getByRole("link", { name: "Início" })).not.toHaveAttribute(
         "aria-current",
       );
-      expect(within(nav).getAllByRole("link")).toHaveLength(4);
+      expect(within(nav).getAllByRole("link")).toHaveLength(5);
     }
 
     const banner = screen.getByRole("banner");
@@ -133,7 +133,6 @@ describe("PersonalAppShell", () => {
       within(banner).queryByRole("link", { name: "Cadastrar exercício" }),
     ).toBeNull();
     for (const label of [
-      "Treinos",
       "Relatórios",
       "Financeiro",
       "Mensagens",
@@ -190,6 +189,32 @@ describe("PersonalAppShell", () => {
     expect(screen.getByRole("link", { name: "Cadastrar exercício" })).toHaveAttribute(
       "href",
       "/exercicios/novo",
+    );
+  });
+
+  it.each([
+    "/treinos",
+    "/treinos/novo",
+    "/treinos/00000000-0000-4000-8000-000000000001",
+  ])("marks the training plan section active at %s", (path) => {
+    pathname.mockReturnValue(path);
+    render(<PersonalAppShell identity={identity}>Planos</PersonalAppShell>);
+    for (const nav of screen.getAllByRole("navigation")) {
+      expect(within(nav).getByRole("link", { name: "Treinos" })).toHaveAttribute(
+        "aria-current",
+        "page",
+      );
+      expect(within(nav).getAllByRole("link")).toHaveLength(5);
+    }
+    expect(within(screen.getByRole("banner")).getByText("Treinos")).toBeInTheDocument();
+  });
+
+  it("shows the new plan action from the training plan list", () => {
+    pathname.mockReturnValue("/treinos");
+    render(<PersonalAppShell identity={identity}>Treinos</PersonalAppShell>);
+    expect(screen.getByRole("link", { name: "Novo treino" })).toHaveAttribute(
+      "href",
+      "/treinos/novo",
     );
   });
 });
