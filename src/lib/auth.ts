@@ -9,6 +9,7 @@ import {
   roleForInvite,
   type SignupInviteValidation,
 } from "@/lib/auth/invite-context";
+import { getTrustedOrigins } from "@/lib/auth/trusted-origins";
 import { sendNodusVerificationEmail } from "@/lib/auth/verification-email";
 
 const pool = new Pool({
@@ -70,7 +71,7 @@ export const auth = betterAuth({
   appName: "NodusFit",
   baseURL: process.env.BETTER_AUTH_URL,
   secret: process.env.BETTER_AUTH_SECRET,
-  trustedOrigins: [process.env.NODUS_MOBILE_SCHEME ?? "nodusfit://"],
+  trustedOrigins: getTrustedOrigins(),
   database: pool,
   emailAndPassword: {
     enabled: true,
