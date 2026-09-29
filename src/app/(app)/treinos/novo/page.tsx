@@ -1,10 +1,17 @@
 import { Suspense } from "react";
-import { TrainingPlanBuilderClient } from "@/components/training-plans/training-plan-builder-client";
+import { TrainingContentEditorClient } from "@/components/training/training-content-editor-client";
 
-export default function NewTrainingPlanPage() {
+export default async function NewTrainingPage({
+  searchParams,
+}: {
+  searchParams: Promise<{ tipo?: string }>;
+}) {
+  const { tipo } = await searchParams;
+  const kind = tipo === "plano" ? "plano" : "modelo";
+
   return (
-    <Suspense fallback={<p role="status">Carregando construtor de treino…</p>}>
-      <TrainingPlanBuilderClient />
+    <Suspense fallback={<p role="status">Carregando editor de treino…</p>}>
+      <TrainingContentEditorClient kind={kind} />
     </Suspense>
   );
 }
