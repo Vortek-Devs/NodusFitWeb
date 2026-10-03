@@ -12,8 +12,10 @@ vi.mock("next/navigation", () => ({
 
 const ids = {
   exercise: "10000000-0000-4000-8000-000000000001",
+  muscleGroup: "10000000-0000-4000-8000-000000000002",
   template: "20000000-0000-4000-8000-000000000001",
   templateVersion: "20000000-0000-4000-8000-000000000002",
+  historicalTemplateVersion: "20000000-0000-4000-8000-000000000003",
   plan: "30000000-0000-4000-8000-000000000001",
   block: "40000000-0000-4000-8000-000000000001",
   workoutExercise: "50000000-0000-4000-8000-000000000001",
@@ -30,7 +32,7 @@ const exercise = {
   version: 1,
   createdAt: timestamp,
   equipment: [],
-  primaryMuscleGroups: [],
+  primaryMuscleGroups: [{ id: ids.muscleGroup, name: "Quadríceps" }],
   secondaryMuscleGroups: [],
 };
 const templateItem = {
@@ -48,20 +50,128 @@ afterEach(() => {
   mockReplace.mockReset();
 });
 
-function renderEditor(kind: "modelo" | "plano", fetcher: typeof fetch) {
+function renderEditor(
+  kind: "modelo" | "plano",
+  fetcher: typeof fetch,
+  resourceId?: string,
+) {
   vi.stubGlobal("fetch", fetcher);
   const queryClient = new QueryClient({
     defaultOptions: { queries: { retry: false }, mutations: { retry: false } },
   });
   return render(
     <QueryClientProvider client={queryClient}>
-      <TrainingContentEditorClient kind={kind} />
+      <TrainingContentEditorClient kind={kind} resourceId={resourceId} />
     </QueryClientProvider>,
   );
 }
 
 describe("versioned training editor", () => {
-  it("creates a workout template from the exercise catalog without actor identity", async () => {
+  it("uses persisted template entity IDs for stable hydrated controls", async () => {
+    const existingTemplate = {
+      ...templateItem,
+      status: "DRAFT",
+      notes: null,
+      blocks: [
+        {
+          id: ids.block,
+          position: 1,
+          label: null,
+          exercises: [
+            {
+              id: ids.workoutExercise,
+              position: 1,
+              exerciseId: ids.exercise,
+              notes: null,
+              prescription: {
+                id: ids.prescription,
+                sets: 3,
+                repsMin: 8,
+                repsMax: 12,
+                suggestedLoadKg: null,
+                restSeconds: 90,
+              },
+            },
+          ],
+        },
+      ],
+    };
+    const fetcher = vi.fn<typeof fetch>().mockImplementation(async (input) => {
+      const path = String(input);
+      if (path === `/api/backend/v1/workout-templates/${ids.template}`)
+        return Response.json(existingTemplate);
+      if (path.includes("/exercises/options"))
+        return Response.json({ equipment: [], muscleGroups: [] });
+      if (path.includes("/exercises?"))
+        return Response.json({ items: [exercise], page: 1, pageSize: 20, totalCount: 1 });
+      throw new Error(`Unexpected request: ${path}`);
+    });
+
+    renderEditor("modelo", fetcher, ids.template);
+
+    expect(await screen.findByLabelText("Carga sugerida (kg)")).toHaveAttribute(
+      "id",
+      `suggested-load-${ids.workoutExercise}`,
+    );
+  });
+
+  it("uses persisted plan workout IDs for stable hydrated controls", async () => {
+    const existingPlan = {
+      ...createdPlanFixture(),
+      workouts: [
+        {
+          id: ids.planWorkout,
+          position: 1,
+          weekday: 1,
+          label: null,
+          workoutTemplateVersionId: ids.templateVersion,
+        },
+      ],
+    };
+    const fetcher = vi.fn<typeof fetch>().mockImplementation(async (input) => {
+      const path = String(input);
+      if (path === `/api/backend/v1/training-plans/${ids.plan}`)
+        return Response.json(existingPlan);
+      if (path.includes("/workout-templates?"))
+        return Response.json({
+          items: [templateItem],
+          page: 1,
+          pageSize: 20,
+          totalCount: 1,
+        });
+      throw new Error(`Unexpected request: ${path}`);
+    });
+
+    renderEditor("plano", fetcher, ids.plan);
+
+    expect(await screen.findByLabelText("Observação opcional")).toHaveAttribute(
+      "id",
+      `workout-label-${ids.planWorkout}`,
+    );
+  });
+
+  it("does not generate random IDs while rendering a new plan", async () => {
+    const randomUUID = vi.fn(() => ids.planWorkout);
+    vi.stubGlobal("crypto", { randomUUID });
+    const fetcher = vi.fn<typeof fetch>().mockImplementation(async (input) => {
+      const path = String(input);
+      if (path.includes("/workout-templates?"))
+        return Response.json({
+          items: [templateItem],
+          page: 1,
+          pageSize: 20,
+          totalCount: 1,
+        });
+      throw new Error(`Unexpected request: ${path}`);
+    });
+
+    renderEditor("plano", fetcher);
+
+    await screen.findByLabelText("Treino de segunda-feira");
+    expect(randomUUID).not.toHaveBeenCalled();
+  });
+
+  it("filters the live exercise catalog and saves exercise guidance", async () => {
     const createdTemplate = {
       ...templateItem,
       name: "Força A",
@@ -94,6 +204,12 @@ describe("versioned training editor", () => {
     };
     const fetcher = vi.fn<typeof fetch>().mockImplementation(async (input, init) => {
       const path = String(input);
+      if (path.includes("/exercises/options")) {
+        return Response.json({
+          equipment: [],
+          muscleGroups: [{ id: ids.muscleGroup, name: "Quadríceps" }],
+        });
+      }
       if (path.includes("/exercises?")) {
         return Response.json({ items: [exercise], page: 1, pageSize: 20, totalCount: 1 });
       }
@@ -107,8 +223,27 @@ describe("versioned training editor", () => {
     fireEvent.change(await screen.findByLabelText("Nome do treino"), {
       target: { value: "Força A" },
     });
+    fireEvent.click(await screen.findByRole("button", { name: "Quadríceps" }));
+    await waitFor(() => {
+      expect(
+        fetcher.mock.calls.some(([path]) =>
+          String(path).includes(`muscleGroupId=${ids.muscleGroup}`),
+        ),
+      ).toBe(true);
+    });
+    fireEvent.click(await screen.findByRole("button", { name: "Ver prévia preenchida" }));
+    expect(
+      await screen.findByText("Prévia visual · não adicionada ao treino"),
+    ).toBeInTheDocument();
     fireEvent.click(
       await screen.findByRole("button", { name: /Adicionar Agachamento livre/ }),
+    );
+    expect(
+      screen.queryByText("Prévia visual · não adicionada ao treino"),
+    ).not.toBeInTheDocument();
+    fireEvent.change(
+      screen.getByLabelText("Observações do exercício Agachamento livre"),
+      { target: { value: "Controlar a descida." } },
     );
     fireEvent.click(screen.getByRole("button", { name: "Salvar rascunho" }));
 
@@ -132,6 +267,7 @@ describe("versioned training editor", () => {
     expect(payload.blocks).toHaveLength(1);
     expect(payload.blocks[0].exercises[0]).toMatchObject({
       exerciseId: ids.exercise,
+      notes: "Controlar a descida.",
       prescription: { sets: 3, repsMin: 8, repsMax: 12, restSeconds: 90 },
     });
     expect(mockReplace).toHaveBeenCalledWith(`/treinos/${ids.template}?tipo=modelo`);
@@ -206,6 +342,52 @@ describe("versioned training editor", () => {
     ]);
     expect(payload).not.toHaveProperty("studentId");
     expect(mockReplace).toHaveBeenCalledWith(`/treinos/${ids.plan}?tipo=plano`);
+  });
+
+  it("keeps the exact historical template version visible in an existing plan", async () => {
+    const existingPlan = {
+      ...createdPlanFixture(),
+      workouts: [
+        {
+          id: ids.planWorkout,
+          position: 1,
+          weekday: 1,
+          label: null,
+          workoutTemplateVersionId: ids.historicalTemplateVersion,
+        },
+      ],
+    };
+    const fetcher = vi.fn<typeof fetch>().mockImplementation(async (input) => {
+      const path = String(input);
+      if (path === `/api/backend/v1/training-plans/${ids.plan}`)
+        return Response.json(existingPlan);
+      if (path.includes("/workout-templates?"))
+        return Response.json({
+          items: [templateItem],
+          page: 1,
+          pageSize: 20,
+          totalCount: 1,
+        });
+      if (
+        path ===
+        `/api/backend/v1/workout-templates/versions/${ids.historicalTemplateVersion}`
+      ) {
+        return Response.json({
+          id: ids.historicalTemplateVersion,
+          name: "Treino A histórico",
+          versionNumber: 3,
+        });
+      }
+      throw new Error(`Unexpected request: ${path}`);
+    });
+
+    renderEditor("plano", fetcher, ids.plan);
+
+    const select = await screen.findByLabelText("Treino de segunda-feira");
+    expect(
+      await screen.findByRole("option", { name: "Treino A histórico · v3" }),
+    ).toBeInTheDocument();
+    expect(select).toHaveValue(ids.historicalTemplateVersion);
   });
 
   it("assigns a published immutable plan to an active student without actor identity", async () => {

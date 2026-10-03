@@ -19,6 +19,7 @@ import { DEFAULT_EXERCISE_FILTERS } from "@/features/exercises/exercise-query-ke
 import {
   exerciseDetailQueryOptions,
   exerciseListQueryOptions,
+  exerciseOptionsQueryOptions,
 } from "@/features/exercises/exercises-api";
 import {
   DEFAULT_STUDENT_FILTERS,
@@ -36,9 +37,11 @@ import {
   updateWorkoutTemplate,
   workoutTemplateDetailOptions,
   workoutTemplateListOptions,
+  workoutTemplateVersionSummaryOptions,
 } from "@/features/training/training-api";
 import { DEFAULT_TRAINING_FILTER } from "@/features/training/training-query-keys";
 import { NodusApiError } from "@/lib/api/nodus-api-client";
+import type { ExerciseCatalogItem } from "@/lib/contracts/exercises";
 import { isUuid } from "@/lib/contracts/students";
 import type {
   CreateTrainingPlanInput,
@@ -61,6 +64,13 @@ interface TrainingContentEditorClientProps {
 
 const inputClass =
   "min-h-11 rounded-lg border border-border bg-page px-3 text-sm text-ink-primary focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-brand-400";
+const DEFAULT_EXERCISE_PRESCRIPTION = {
+  sets: 3,
+  repsMin: 8,
+  repsMax: 12,
+  suggestedLoadKg: "",
+  restSeconds: 90,
+};
 
 export function TrainingContentEditorClient({
   kind,
@@ -68,7 +78,12 @@ export function TrainingContentEditorClient({
 }: TrainingContentEditorClientProps) {
   const validId = resourceId && isUuid(resourceId) ? resourceId : undefined;
   const [exerciseSearch, setExerciseSearch] = useState("");
+  const [muscleGroupId, setMuscleGroupId] = useState<string | undefined>();
   const [templateSearch, setTemplateSearch] = useState("");
+  const exerciseOptions = useQuery({
+    ...exerciseOptionsQueryOptions(),
+    enabled: kind === "modelo",
+  });
   const template = useQuery({
     ...workoutTemplateDetailOptions(validId ?? ""),
     enabled: kind === "modelo" && Boolean(validId),
@@ -80,6 +95,7 @@ export function TrainingContentEditorClient({
   const exerciseFilter = {
     ...DEFAULT_EXERCISE_FILTERS,
     page: 1,
+    muscleGroupId,
     search: exerciseSearch.trim() || undefined,
   };
   const exercises = useQuery({
@@ -156,7 +172,11 @@ export function TrainingContentEditorClient({
         exerciseNames={exerciseNames}
         search={exerciseSearch}
         onSearchChange={setExerciseSearch}
+        muscleGroups={exerciseOptions.data?.muscleGroups ?? []}
+        selectedMuscleGroupId={muscleGroupId}
+        onMuscleGroupChange={setMuscleGroupId}
         exerciseItems={exercises.data?.items ?? []}
+        exerciseTotalCount={exercises.data?.totalCount ?? 0}
         exercisesPending={exercises.isPending}
         exercisesError={exercises.isError ? exercises.error : null}
         retryExercises={() => void exercises.refetch()}
@@ -202,7 +222,11 @@ function WorkoutTemplateEditor({
   exerciseNames,
   search,
   onSearchChange,
+  muscleGroups,
+  selectedMuscleGroupId,
+  onMuscleGroupChange,
   exerciseItems,
+  exerciseTotalCount,
   exercisesPending,
   exercisesError,
   retryExercises,
@@ -211,7 +235,11 @@ function WorkoutTemplateEditor({
   exerciseNames: Map<string, string>;
   search: string;
   onSearchChange: (value: string) => void;
-  exerciseItems: { id: string; name: string; modality: string }[];
+  muscleGroups: { id: string; name: string }[];
+  selectedMuscleGroupId?: string;
+  onMuscleGroupChange: (value: string | undefined) => void;
+  exerciseItems: ExerciseCatalogItem[];
+  exerciseTotalCount: number;
   exercisesPending: boolean;
   exercisesError: Error | null;
   retryExercises: () => void;
@@ -220,14 +248,15 @@ function WorkoutTemplateEditor({
   const queryClient = useQueryClient();
   const [name, setName] = useState(initial?.name ?? "");
   const [notes, setNotes] = useState(initial?.notes ?? "");
+  const [showPreview, setShowPreview] = useState(false);
   const [blocks, setBlocks] = useState<TemplateBlockDraft[]>(() =>
     initial
       ? initial.blocks.map((block) => ({
-          entityId: globalThis.crypto.randomUUID(),
+          entityId: block.id,
           label: block.label ?? "",
           exercises: block.exercises.map((exercise) => ({
-            entityId: globalThis.crypto.randomUUID(),
-            prescriptionEntityId: globalThis.crypto.randomUUID(),
+            entityId: exercise.id,
+            prescriptionEntityId: exercise.prescription.id,
             exerciseId: exercise.exerciseId,
             exerciseName:
               exerciseNames.get(exercise.exerciseId) ?? "Exercício do catálogo",
@@ -275,6 +304,7 @@ function WorkoutTemplateEditor({
   function addExercise(exercise: { id: string; name: string }) {
     setError(null);
     setNotice(null);
+    setShowPreview(false);
     setBlocks((current) => [
       ...current,
       {
@@ -287,11 +317,7 @@ function WorkoutTemplateEditor({
             exerciseId: exercise.id,
             exerciseName: exercise.name,
             notes: "",
-            sets: 3,
-            repsMin: 8,
-            repsMax: 12,
-            suggestedLoadKg: "",
-            restSeconds: 90,
+            ...DEFAULT_EXERCISE_PRESCRIPTION,
           },
         ],
       },
@@ -456,95 +482,162 @@ function WorkoutTemplateEditor({
       {error ? <EditorAlert>{error}</EditorAlert> : null}
       {notice ? <EditorNotice>{notice}</EditorNotice> : null}
 
-      <div className="grid items-start gap-4 xl:grid-cols-[17rem_minmax(22rem,1fr)_18rem]">
-        <aside className="space-y-4 rounded-xl border border-border bg-surface p-4">
-          <h2 className="font-[var(--font-syne)] text-lg font-bold text-ink-primary">
-            Configurar
-          </h2>
-          <label
-            htmlFor="training-template-name"
-            className="block space-y-2 text-sm font-semibold text-ink-primary"
-          >
-            <span>Nome do treino</span>
-            <Input
-              id="training-template-name"
-              aria-label="Nome do treino"
-              value={name}
-              maxLength={120}
-              required
-              onChange={(event) => setName(event.currentTarget.value)}
-              placeholder="Ex.: Peito + tríceps"
-            />
-          </label>
-          <label
-            htmlFor="training-template-notes"
-            className="block space-y-2 text-sm font-semibold text-ink-primary"
-          >
-            <span>Orientações</span>
-            <textarea
-              id="training-template-notes"
-              aria-label="Orientações do treino"
-              className={`${inputClass} min-h-28 w-full py-3`}
-              value={notes}
-              maxLength={2_000}
-              onChange={(event) => setNotes(event.currentTarget.value)}
-              placeholder="Orientações gerais para este treino…"
-            />
-          </label>
-          <div className="grid grid-cols-2 gap-3">
-            <Metric label="Exercícios" value={exerciseCount} />
-            <Metric label="Séries" value={setCount} />
+      <div className="grid items-start gap-4 xl:grid-cols-[16rem_minmax(24rem,1fr)_18rem] 2xl:grid-cols-[18rem_minmax(32rem,1fr)_20rem] 2xl:gap-5">
+        <aside className="overflow-hidden rounded-2xl border border-border bg-surface shadow-card">
+          <div className="border-b border-border-muted bg-page/70 p-5">
+            <p className="text-[10px] font-bold uppercase tracking-[0.16em] text-ink-brand">
+              Configuração · 01
+            </p>
+            <h2 className="mt-1 font-[var(--font-syne)] text-xl font-extrabold text-ink-primary">
+              Identidade do treino
+            </h2>
+            <p className="mt-1 text-xs leading-5 text-ink-secondary">
+              Um modelo reutilizável nos seus planos semanais.
+            </p>
           </div>
+          <div className="space-y-4 p-5">
+            <label
+              htmlFor="training-template-name"
+              className="block space-y-2 text-sm font-semibold text-ink-primary"
+            >
+              <span>Nome do treino</span>
+              <Input
+                id="training-template-name"
+                aria-label="Nome do treino"
+                value={name}
+                maxLength={120}
+                required
+                onChange={(event) => setName(event.currentTarget.value)}
+                placeholder="Ex.: Peito + tríceps"
+              />
+            </label>
+            <label
+              htmlFor="training-template-notes"
+              className="block space-y-2 text-sm font-semibold text-ink-primary"
+            >
+              <span>Orientações gerais</span>
+              <textarea
+                id="training-template-notes"
+                aria-label="Orientações do treino"
+                className={`${inputClass} min-h-28 w-full py-3`}
+                value={notes}
+                maxLength={2_000}
+                onChange={(event) => setNotes(event.currentTarget.value)}
+                placeholder="Pontos importantes para a sessão…"
+              />
+            </label>
+          </div>
+          <dl className="grid grid-cols-3 gap-2 border-t border-border-muted bg-page/50 p-4">
+            <Metric label="Exercícios" value={exerciseCount} />
+            <Metric label="Blocos" value={blocks.length} />
+            <Metric label="Séries" value={setCount} />
+          </dl>
         </aside>
 
         <main className="space-y-4">
-          <section className="rounded-xl border border-border bg-surface p-5">
-            <div className="flex items-center justify-between gap-3">
+          <section className="relative overflow-hidden rounded-2xl border border-brand-400/25 bg-surface p-5 shadow-card">
+            <span
+              aria-hidden="true"
+              className="absolute inset-y-0 left-0 w-1 bg-gradient-to-b from-brand-300 via-brand-500 to-brand-700"
+            />
+            <div className="flex items-start justify-between gap-3 pl-2">
               <div>
-                <p className="text-xs font-semibold uppercase tracking-[0.14em] text-ink-brand">
-                  Modelo versionado
+                <p className="text-[10px] font-bold uppercase tracking-[0.16em] text-ink-brand">
+                  Estrutura · modelo versionado
                 </p>
-                <h2 className="mt-1 font-[var(--font-syne)] text-xl font-extrabold text-ink-primary">
+                <h2 className="mt-2 font-[var(--font-syne)] text-2xl font-extrabold text-ink-primary">
                   {name.trim() || "Novo treino"}
                 </h2>
+                <p className="mt-1 max-w-xl text-sm leading-5 text-ink-secondary">
+                  Monte a sequência e deixe a prescrição pronta para reutilizar.
+                </p>
               </div>
-              <span className="rounded-full border border-border px-3 py-1 text-xs font-semibold text-ink-secondary">
+              <span className="shrink-0 rounded-full border border-brand-400/25 bg-brand-400/10 px-3 py-1.5 text-[11px] font-bold uppercase tracking-wide text-ink-brand">
                 Rascunho
               </span>
             </div>
           </section>
 
           {blocks.length === 0 ? (
-            <section className="rounded-xl border border-dashed border-border bg-surface p-8 text-center">
-              <IconBarbell
-                aria-hidden="true"
-                className="mx-auto text-ink-brand"
-                size={30}
-              />
-              <h2 className="mt-3 font-semibold text-ink-primary">
-                Comece pela biblioteca
-              </h2>
-              <p className="mt-1 text-sm text-ink-secondary">
-                Adicione exercícios e ajuste séries, repetições, carga e descanso.
-              </p>
-            </section>
+            <>
+              <section className="relative overflow-hidden rounded-2xl border border-dashed border-brand-400/35 bg-page p-6 sm:p-7">
+                <div className="pointer-events-none absolute -right-10 -top-12 size-44 rounded-full border border-brand-400/10" />
+                <div className="pointer-events-none absolute -right-2 -top-4 size-28 rounded-full border border-brand-400/10" />
+                <div className="relative flex items-start gap-4">
+                  <span className="grid size-12 shrink-0 place-items-center rounded-xl border border-brand-400/25 bg-brand-400/10 text-ink-brand">
+                    <IconBarbell aria-hidden="true" size={23} stroke={1.8} />
+                  </span>
+                  <div className="min-w-0">
+                    <p className="text-[10px] font-bold uppercase tracking-[0.16em] text-ink-brand">
+                      Sua sequência começa aqui
+                    </p>
+                    <h3 className="mt-1 font-[var(--font-syne)] text-xl font-extrabold text-ink-primary">
+                      Escolha o primeiro movimento
+                    </h3>
+                    <p className="mt-2 max-w-lg text-sm leading-6 text-ink-secondary">
+                      Use um exercício do catálogo. Depois, ajuste séries, repetições,
+                      carga, descanso e orientação individual — tudo fica editável antes
+                      da publicação.
+                    </p>
+                  </div>
+                </div>
+                <div className="relative mt-6 grid gap-2 sm:grid-cols-3">
+                  {[
+                    ["01", "Movimento", "Do seu catálogo"],
+                    ["02", "Prescrição", "Séries e intervalo"],
+                    ["03", "Orientação", "Dica para o aluno"],
+                  ].map(([step, title, detail]) => (
+                    <div
+                      className="rounded-xl border border-border-muted bg-surface/80 px-3 py-3"
+                      key={step}
+                    >
+                      <p className="font-mono text-[10px] font-bold text-ink-brand">
+                        {step}
+                      </p>
+                      <p className="mt-1 text-xs font-bold text-ink-primary">{title}</p>
+                      <p className="mt-0.5 text-[10px] leading-4 text-ink-tertiary">
+                        {detail}
+                      </p>
+                    </div>
+                  ))}
+                </div>
+                {exerciseItems.length > 0 ? (
+                  <Button
+                    className="relative mt-4"
+                    onClick={() => setShowPreview((current) => !current)}
+                    type="button"
+                    variant="outline"
+                  >
+                    {showPreview ? "Ocultar prévia" : "Ver prévia preenchida"}
+                  </Button>
+                ) : null}
+              </section>
+              {showPreview && exerciseItems[0] ? (
+                <TemplateExercisePreview exercise={exerciseItems[0]} />
+              ) : null}
+            </>
           ) : (
             blocks.map((block, blockIndex) => (
               <section
-                className="overflow-hidden rounded-xl border border-border bg-surface"
+                className="overflow-hidden rounded-2xl border border-brand-400/20 bg-surface shadow-card"
                 key={block.entityId}
               >
-                <header className="flex items-center justify-between gap-3 border-b border-border p-4">
+                <header className="flex items-center justify-between gap-3 border-b border-border-muted bg-page/50 p-4">
                   <div className="flex items-center gap-3">
-                    <span className="grid size-9 place-items-center rounded-full border border-border text-xs font-semibold text-ink-brand">
+                    <span className="grid size-10 place-items-center rounded-xl border border-brand-400/25 bg-brand-400/10 font-mono text-xs font-bold text-ink-brand">
                       {String(blockIndex + 1).padStart(2, "0")}
                     </span>
                     <div>
                       <p className="font-semibold text-ink-primary">
                         {block.exercises[0]?.exerciseName ?? "Bloco de exercícios"}
                       </p>
-                      <p className="text-xs text-ink-secondary">
-                        {block.exercises.length} exercício(s)
+                      <p className="mt-0.5 text-xs text-ink-secondary">
+                        {block.exercises.length} exercício(s) ·{" "}
+                        {block.exercises.reduce(
+                          (total, exercise) => total + exercise.sets,
+                          0,
+                        )}{" "}
+                        séries
                       </p>
                     </div>
                   </div>
@@ -557,13 +650,21 @@ function WorkoutTemplateEditor({
                     <IconTrash aria-hidden="true" size={17} />
                   </Button>
                 </header>
-                <div className="space-y-4 p-4">
+                <div className="space-y-4 p-4 sm:p-5">
                   {block.exercises.map((exercise) => (
-                    <article className="space-y-3" key={exercise.entityId}>
-                      <div className="flex items-center justify-between gap-2">
-                        <p className="font-semibold text-ink-primary">
-                          {exercise.exerciseName}
-                        </p>
+                    <article
+                      className="space-y-4 rounded-xl border border-border-muted bg-page/45 p-4"
+                      key={exercise.entityId}
+                    >
+                      <div className="flex items-start justify-between gap-3">
+                        <div>
+                          <p className="font-[var(--font-syne)] text-lg font-bold text-ink-primary">
+                            {exercise.exerciseName}
+                          </p>
+                          <p className="mt-1 text-[10px] font-bold uppercase tracking-[0.14em] text-ink-brand">
+                            Prescrição do movimento
+                          </p>
+                        </div>
                         <Button
                           type="button"
                           variant="ghost"
@@ -573,7 +674,7 @@ function WorkoutTemplateEditor({
                           <IconTrash aria-hidden="true" size={17} />
                         </Button>
                       </div>
-                      <div className="grid gap-3 sm:grid-cols-2 2xl:grid-cols-4">
+                      <div className="grid gap-2 sm:grid-cols-2 2xl:grid-cols-4">
                         <NumberField
                           label={`Séries ${exercise.exerciseName}`}
                           value={exercise.sets}
@@ -625,7 +726,7 @@ function WorkoutTemplateEditor({
                       </div>
                       <label
                         htmlFor={`suggested-load-${exercise.entityId}`}
-                        className="block space-y-2 text-sm font-medium text-ink-secondary"
+                        className="block max-w-xs space-y-2 text-sm font-medium text-ink-secondary"
                       >
                         <span>Carga sugerida (kg)</span>
                         <Input
@@ -644,6 +745,27 @@ function WorkoutTemplateEditor({
                           }}
                         />
                       </label>
+                      <label
+                        htmlFor={`exercise-notes-${exercise.entityId}`}
+                        className="block space-y-2 text-sm font-medium text-ink-secondary"
+                      >
+                        <span>Orientação deste exercício</span>
+                        <textarea
+                          id={`exercise-notes-${exercise.entityId}`}
+                          aria-label={`Observações do exercício ${exercise.exerciseName}`}
+                          className={`${inputClass} min-h-20 w-full resize-y py-3`}
+                          maxLength={1_000}
+                          placeholder="Ex.: controlar o movimento durante a execução…"
+                          value={exercise.notes}
+                          onChange={(event) => {
+                            const notes = event.currentTarget.value;
+                            updateExercise(exercise.entityId, (item) => ({
+                              ...item,
+                              notes,
+                            }));
+                          }}
+                        />
+                      </label>
                     </article>
                   ))}
                 </div>
@@ -652,11 +774,21 @@ function WorkoutTemplateEditor({
           )}
         </main>
 
-        <aside className="overflow-hidden rounded-xl border border-border bg-surface">
-          <div className="space-y-3 border-b border-border p-4">
-            <h2 className="font-[var(--font-syne)] text-lg font-bold text-ink-primary">
-              Biblioteca
-            </h2>
+        <aside className="overflow-hidden rounded-2xl border border-border bg-surface shadow-card">
+          <div className="space-y-3 border-b border-border-muted bg-page/70 p-4">
+            <div className="flex items-end justify-between gap-3">
+              <div>
+                <p className="text-[10px] font-bold uppercase tracking-[0.15em] text-ink-brand">
+                  Movimentos disponíveis
+                </p>
+                <h2 className="mt-1 font-[var(--font-syne)] text-xl font-extrabold text-ink-primary">
+                  Biblioteca
+                </h2>
+              </div>
+              <span className="rounded-full border border-border bg-surface px-2.5 py-1 text-[11px] font-bold tabular-nums text-ink-secondary">
+                {exerciseTotalCount}
+              </span>
+            </div>
             <label htmlFor="exercise-search" className="relative block">
               <IconSearch
                 aria-hidden="true"
@@ -672,6 +804,36 @@ function WorkoutTemplateEditor({
                 placeholder="Buscar exercício…"
               />
             </label>
+            <fieldset className="-mx-1 flex min-w-0 gap-2 overflow-x-auto border-0 px-1 pb-1">
+              <legend className="sr-only">Filtrar biblioteca por grupo muscular</legend>
+              <button
+                aria-pressed={!selectedMuscleGroupId}
+                className={`min-h-9 shrink-0 rounded-full border px-3 text-xs font-semibold transition-colors focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-brand-400 ${
+                  !selectedMuscleGroupId
+                    ? "border-brand-400/40 bg-brand-400/10 text-ink-brand"
+                    : "border-border bg-surface text-ink-secondary hover:border-brand-400/30 hover:text-ink-primary"
+                }`}
+                onClick={() => onMuscleGroupChange(undefined)}
+                type="button"
+              >
+                Todos
+              </button>
+              {muscleGroups.map((group) => (
+                <button
+                  aria-pressed={selectedMuscleGroupId === group.id}
+                  className={`min-h-9 shrink-0 rounded-full border px-3 text-xs font-semibold transition-colors focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-brand-400 ${
+                    selectedMuscleGroupId === group.id
+                      ? "border-brand-400/40 bg-brand-400/10 text-ink-brand"
+                      : "border-border bg-surface text-ink-secondary hover:border-brand-400/30 hover:text-ink-primary"
+                  }`}
+                  key={group.id}
+                  onClick={() => onMuscleGroupChange(group.id)}
+                  type="button"
+                >
+                  {group.name}
+                </button>
+              ))}
+            </fieldset>
           </div>
           {exercisesPending ? (
             <p role="status" className="p-4 text-sm text-ink-secondary">
@@ -686,19 +848,34 @@ function WorkoutTemplateEditor({
                 : "Nenhum exercício ativo no catálogo."}
             </p>
           ) : (
-            <ul className="max-h-[34rem] divide-y divide-border overflow-y-auto">
+            <ul className="max-h-[34rem] divide-y divide-border-muted overflow-y-auto">
               {visibleExercises.map((exercise) => (
                 <li
-                  className="flex items-center justify-between gap-3 p-3"
+                  className="group flex items-center justify-between gap-3 p-3 transition-colors hover:bg-hover/70"
                   key={exercise.id}
                 >
-                  <div className="min-w-0">
-                    <p className="truncate text-sm font-semibold text-ink-primary">
-                      {exercise.name}
-                    </p>
-                    <p className="text-xs text-ink-tertiary">
-                      {modalityLabel(exercise.modality)}
-                    </p>
+                  <div className="flex min-w-0 items-start gap-3">
+                    <span className="grid size-9 shrink-0 place-items-center rounded-lg border border-brand-400/20 bg-brand-400/5 text-ink-brand">
+                      <IconBarbell aria-hidden="true" size={17} stroke={1.8} />
+                    </span>
+                    <div className="min-w-0">
+                      <p className="truncate text-sm font-bold text-ink-primary">
+                        {exercise.name}
+                      </p>
+                      <div className="mt-1.5 flex flex-wrap gap-1">
+                        <span className="rounded-full bg-brand-400/10 px-2 py-0.5 text-[9px] font-bold uppercase tracking-wide text-ink-brand">
+                          {modalityLabel(exercise.modality)}
+                        </span>
+                        {exercise.primaryMuscleGroups.slice(0, 2).map((group) => (
+                          <span
+                            className="rounded-full border border-border-muted px-2 py-0.5 text-[9px] font-medium text-ink-tertiary"
+                            key={group.id}
+                          >
+                            {group.name}
+                          </span>
+                        ))}
+                      </div>
+                    </div>
                   </div>
                   <Button
                     type="button"
@@ -720,6 +897,7 @@ function WorkoutTemplateEditor({
 
 interface PlanWorkoutDraft {
   entityId: string;
+  clientEntityId: string | null;
   weekday: number;
   label: string;
   workoutTemplateVersionId: string;
@@ -749,16 +927,19 @@ function TrainingPlanEditor({
 }) {
   const router = useRouter();
   const queryClient = useQueryClient();
+  const initialWorkoutEntityId = useId();
+  const generatedClientEntityIds = useRef(new Map<string, string>());
   const [name, setName] = useState(initial?.name ?? "");
   const [workouts, setWorkouts] = useState<PlanWorkoutDraft[]>(() =>
     initial
       ? initial.workouts.map((workout) => ({
-          entityId: globalThis.crypto.randomUUID(),
+          entityId: workout.id,
+          clientEntityId: workout.id,
           weekday: workout.weekday,
           label: workout.label ?? "",
           workoutTemplateVersionId: workout.workoutTemplateVersionId,
         }))
-      : [newPlanWorkout(1)],
+      : [newPlanWorkout(1, initialWorkoutEntityId, null)],
   );
   const [error, setError] = useState<string | null>(null);
   const [notice, setNotice] = useState<string | null>(null);
@@ -773,8 +954,43 @@ function TrainingPlanEditor({
   const selectedWorkouts = workouts.filter((workout) =>
     isUuid(workout.workoutTemplateVersionId),
   );
+  const listedVersionIds = new Set(
+    templates.flatMap((template) =>
+      template.currentPublishedVersionId ? [template.currentPublishedVersionId] : [],
+    ),
+  );
+  const unresolvedVersionIds = [
+    ...new Set(
+      selectedWorkouts
+        .map((workout) => workout.workoutTemplateVersionId)
+        .filter((versionId) => !listedVersionIds.has(versionId)),
+    ),
+  ];
+  const unresolvedVersionQueries = useQueries({
+    queries: unresolvedVersionIds.map(workoutTemplateVersionSummaryOptions),
+  });
+  const unresolvedVersionOptions = unresolvedVersionIds.map((versionId, index) => {
+    const query = unresolvedVersionQueries[index];
+    return {
+      id: versionId,
+      label: query.data
+        ? `${query.data.name} · v${query.data.versionNumber}`
+        : query.isError
+          ? `Versão vinculada indisponível · ${versionId}`
+          : `Carregando versão vinculada · ${versionId}`,
+    };
+  });
   const canSave = Boolean(name.trim());
   const canPublish = Boolean(canSave && selectedWorkouts.length > 0);
+
+  function clientEntityIdFor(entityId: string) {
+    let clientEntityId = generatedClientEntityIds.current.get(entityId);
+    if (!clientEntityId) {
+      clientEntityId = globalThis.crypto.randomUUID();
+      generatedClientEntityIds.current.set(entityId, clientEntityId);
+    }
+    return clientEntityId;
+  }
 
   function addWorkout() {
     if (workouts.length >= 7) return;
@@ -813,7 +1029,7 @@ function TrainingPlanEditor({
     return {
       name: name.trim(),
       workouts: selectedWorkouts.map((workout, index) => ({
-        clientEntityId: workout.entityId,
+        clientEntityId: workout.clientEntityId ?? clientEntityIdFor(workout.entityId),
         position: index + 1,
         weekday: workout.weekday,
         label: workout.label.trim() || null,
@@ -1078,13 +1294,18 @@ function TrainingPlanEditor({
                       {templates.map((template) =>
                         template.currentPublishedVersionId ? (
                           <option
-                            key={template.id}
+                            key={template.currentPublishedVersionId}
                             value={template.currentPublishedVersionId}
                           >
                             {template.name} · v{template.version}
                           </option>
                         ) : null,
                       )}
+                      {unresolvedVersionOptions.map((option) => (
+                        <option key={option.id} value={option.id}>
+                          {option.label}
+                        </option>
+                      ))}
                     </select>
                   </label>
                 </div>
@@ -1287,6 +1508,69 @@ function Metric({ label, value }: { label: string; value: number }) {
         {label}
       </p>
     </div>
+  );
+}
+
+function TemplateExercisePreview({ exercise }: { exercise: ExerciseCatalogItem }) {
+  const prescription = DEFAULT_EXERCISE_PRESCRIPTION;
+  const values = [
+    { label: "Séries", value: String(prescription.sets).padStart(2, "0") },
+    { label: "Repetições", value: `${prescription.repsMin}–${prescription.repsMax}` },
+    { label: "Carga", value: "Opcional" },
+    { label: "Descanso", value: `${prescription.restSeconds}s` },
+  ];
+
+  return (
+    <section
+      aria-label="Prévia visual não adicionada ao treino"
+      className="overflow-hidden rounded-2xl border border-brand-400/25 bg-surface shadow-card"
+    >
+      <header className="flex flex-wrap items-start justify-between gap-3 border-b border-border-muted bg-page/50 p-4 sm:p-5">
+        <div>
+          <p className="text-[10px] font-bold uppercase tracking-[0.15em] text-ink-brand">
+            Prévia visual · não adicionada ao treino
+          </p>
+          <h3 className="mt-1 font-[var(--font-syne)] text-lg font-extrabold text-ink-primary">
+            {exercise.name}
+          </h3>
+          <div className="mt-2 flex flex-wrap gap-1.5">
+            <span className="rounded-full bg-brand-400/10 px-2.5 py-1 text-[10px] font-bold uppercase tracking-wide text-ink-brand">
+              {modalityLabel(exercise.modality)}
+            </span>
+            {exercise.primaryMuscleGroups.slice(0, 2).map((group) => (
+              <span
+                className="rounded-full border border-border-muted px-2.5 py-1 text-[10px] font-medium text-ink-tertiary"
+                key={group.id}
+              >
+                {group.name}
+              </span>
+            ))}
+          </div>
+        </div>
+        <span className="rounded-full border border-border bg-surface px-3 py-1 text-[10px] font-semibold text-ink-secondary">
+          Exemplo
+        </span>
+      </header>
+      <div className="grid grid-cols-2 gap-2 p-4 sm:grid-cols-4 sm:p-5">
+        {values.map((item) => (
+          <div
+            className="rounded-xl border border-border-muted bg-page/65 px-3 py-3"
+            key={item.label}
+          >
+            <p className="font-[var(--font-syne)] text-xl font-extrabold tabular-nums text-ink-primary">
+              {item.value}
+            </p>
+            <p className="mt-1 text-[10px] font-bold uppercase tracking-wide text-ink-tertiary">
+              {item.label}
+            </p>
+          </div>
+        ))}
+      </div>
+      <p className="px-4 pb-4 text-xs leading-5 text-ink-tertiary sm:px-5 sm:pb-5">
+        Valores iniciais editáveis. Esta prévia não altera contadores nem será salva;
+        adicione o movimento pela biblioteca para incluí-lo no rascunho.
+      </p>
+    </section>
   );
 }
 
@@ -1647,9 +1931,14 @@ async function invalidateTrainingQueries(
   ]);
 }
 
-function newPlanWorkout(weekday: number): PlanWorkoutDraft {
+function newPlanWorkout(
+  weekday: number,
+  entityId = globalThis.crypto.randomUUID(),
+  clientEntityId: string | null = entityId,
+): PlanWorkoutDraft {
   return {
-    entityId: globalThis.crypto.randomUUID(),
+    entityId,
+    clientEntityId,
     weekday,
     label: "",
     workoutTemplateVersionId: "",
