@@ -258,26 +258,26 @@ select {
   outline-offset: 4px;
 }
 
-.landing-v3 [data-r] {
+:where(.landing-v3.motion-ready) [data-r] {
   opacity: 0;
   transition:
     opacity 0.7s ease,
     transform 0.7s ease;
 }
 
-.landing-v3 [data-r="up"] {
+:where(.landing-v3.motion-ready) [data-r="up"] {
   transform: translateY(32px);
 }
 
-.landing-v3 [data-r="left"] {
+:where(.landing-v3.motion-ready) [data-r="left"] {
   transform: translateX(32px);
 }
 
-.landing-v3 [data-r="right"] {
+:where(.landing-v3.motion-ready) [data-r="right"] {
   transform: translateX(-32px);
 }
 
-.landing-v3 [data-r].in {
+:where(.landing-v3.motion-ready) [data-r].in {
   opacity: 1;
   transform: none;
 }
