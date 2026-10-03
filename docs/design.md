@@ -7,7 +7,7 @@ Este documento acompanha referências visuais quando outra IA for criar motion g
 - Tokens e regras gerais: `docs/design-system.md`.
 - Cores e tipografia do Web: `src/app/globals.css` e `src/app/layout.tsx`.
 - Tokens nativos do Expo: `NodusFitApp/src/theme/tokens.ts`.
-- Logo oficial: `public/brand/nodus-fit-logo.png` — cópia íntegra do original 500 × 500 em PNG RGBA, com o mesmo SHA-256 de `NodusFitApp/assets/nodus-fit-logo.png`. Não redesenhar, substituir, recolorir ou achatar sobre fundo que elimine o contraste.
+- Logo oficial: `public/brand/nodus-fit-logo.png` — cópia byte a byte da imagem PNG fornecida para este projeto (500 × 500, RGBA). Não redesenhar, substituir, recolorir ou achatar sobre fundo que elimine o contraste.
 - As referências de landing que estão fora do repositório são históricas; não são fonte de métricas, preços ou capacidades atuais.
 
 ## Identidade
