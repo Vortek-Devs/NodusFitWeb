@@ -37,6 +37,12 @@ export interface TrainingListItem {
   updatedAt: string;
 }
 
+export interface WorkoutTemplateVersionSummary {
+  id: string;
+  name: string;
+  versionNumber: number;
+}
+
 export type PagedWorkoutTemplates = PagedResponse<TrainingListItem>;
 export type PagedTrainingPlans = PagedResponse<TrainingListItem>;
 
@@ -298,6 +304,17 @@ function isTrainingListItem(value: unknown): value is TrainingListItem {
     (value.status !== "PUBLISHED" || isUuid(value.currentPublishedVersionId)) &&
     isTimestamp(value.createdAt) &&
     isTimestamp(value.updatedAt)
+  );
+}
+
+export function isWorkoutTemplateVersionSummary(
+  value: unknown,
+): value is WorkoutTemplateVersionSummary {
+  return (
+    isRecord(value) &&
+    isUuid(value.id) &&
+    isNonEmptyString(value.name, 120) &&
+    isPositiveInteger(value.versionNumber)
   );
 }
 

@@ -26,6 +26,8 @@ export const trainingQueryKeys = {
   templateList: (filter: TrainingListFilter) =>
     ["workout-templates", "list", filter] as const,
   templateDetail: (id: string) => ["workout-templates", "detail", id] as const,
+  templateVersionSummary: (versionId: string) =>
+    ["workout-templates", "version-summary", versionId] as const,
   plans: ["training-plans"] as const,
   planLists: () => ["training-plans", "list"] as const,
   planList: (filter: TrainingListFilter) => ["training-plans", "list", filter] as const,

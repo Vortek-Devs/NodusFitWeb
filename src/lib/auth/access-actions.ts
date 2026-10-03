@@ -13,7 +13,10 @@ import {
   verificationRequired,
 } from "./auth-result";
 import { buildOAuthSignupState, INVITE_HEADER_NAME } from "./invite-context";
-import { buildVerificationCallback } from "./verification-callback";
+import {
+  buildStudentLoginCallback,
+  buildVerificationCallback,
+} from "./verification-callback";
 
 export type { InviteValidation } from "@/lib/auth/invite-validation";
 export type { AuthActionResult, AuthResult } from "./auth-result";
@@ -72,10 +75,7 @@ export async function studentLogin(
   password: string,
   token?: string,
 ): Promise<AuthResult> {
-  const callbackURL = token
-    ? buildVerificationCallback("aluno", token)
-    : "/acesso?perfil=aluno&emailVerificado=1";
-  return emailLogin(email, password, callbackURL);
+  return emailLogin(email, password, buildStudentLoginCallback(token));
 }
 async function emailLogin(
   email: string,

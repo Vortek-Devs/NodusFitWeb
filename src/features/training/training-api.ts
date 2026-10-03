@@ -10,11 +10,13 @@ import {
   isTrainingPlan,
   isWorkoutAssignmentResponse,
   isWorkoutTemplate,
+  isWorkoutTemplateVersionSummary,
   type PublishTrainingInput,
   type TrainingListFilter,
   type UpdateTrainingPlanInput,
   type UpdateWorkoutTemplateInput,
   type WorkoutAssignmentResponse,
+  type WorkoutTemplateVersionSummary,
 } from "@/lib/contracts/training";
 import { trainingFilterSearchParams, trainingQueryKeys } from "./training-query-keys";
 
@@ -56,6 +58,17 @@ export async function getWorkoutTemplate(id: string, signal?: AbortSignal) {
   return nodusApiRequest(
     `v1/workout-templates/${resourceId(id, "WORKOUT_TEMPLATE_ID_INVALID")}`,
     isWorkoutTemplate,
+    { signal },
+  );
+}
+
+export async function getWorkoutTemplateVersionSummary(
+  versionId: string,
+  signal?: AbortSignal,
+): Promise<WorkoutTemplateVersionSummary> {
+  return nodusApiRequest(
+    `v1/workout-templates/versions/${resourceId(versionId, "WORKOUT_TEMPLATE_VERSION_ID_INVALID")}`,
+    isWorkoutTemplateVersionSummary,
     { signal },
   );
 }
@@ -195,6 +208,13 @@ export function workoutTemplateDetailOptions(id: string) {
   return queryOptions({
     queryKey: trainingQueryKeys.templateDetail(id),
     queryFn: ({ signal }) => getWorkoutTemplate(id, signal),
+  });
+}
+
+export function workoutTemplateVersionSummaryOptions(versionId: string) {
+  return queryOptions({
+    queryKey: trainingQueryKeys.templateVersionSummary(versionId),
+    queryFn: ({ signal }) => getWorkoutTemplateVersionSummary(versionId, signal),
   });
 }
 
