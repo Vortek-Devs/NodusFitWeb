@@ -71,6 +71,7 @@ export const auth = betterAuth({
   appName: "NodusFit",
   baseURL: process.env.BETTER_AUTH_URL,
   secret: process.env.BETTER_AUTH_SECRET,
+  disabledPaths: ["/token"],
   trustedOrigins: getTrustedOrigins(),
   database: pool,
   emailAndPassword: {

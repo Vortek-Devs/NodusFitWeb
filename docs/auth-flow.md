@@ -22,6 +22,11 @@ A configuracao BetterAuth nao inclui o plugin `bearer`: a sessao recebida do cli
 e exclusivamente por cookie. O plugin `jwt()` permanece apenas para emitir a
 credencial interna usada pelo BFF ao chamar a NodusAPI.
 
+Para manter essa fronteira, BetterAuth desabilita o endpoint público `/token`, e a
+rota HTTP `/api/auth/*` remove `set-auth-jwt` de todas as respostas ao browser. O
+BFF chama `auth.api.getSession` diretamente no servidor e continua lendo o header
+interno; o filtro só cobre respostas HTTP públicas.
+
 ## Login por e-mail ou Google
 
 1. O browser chama uma rota em `/api/auth/*`.
@@ -72,6 +77,12 @@ browser envie `role: "ADMIN"` ou `role: "ALUNO"`, o campo BetterAuth possui
 7. O hook consulta novamente o convite e compara o e-mail canônico.
 8. Somente convite `ALUNO` válido, vinculado ao fluxo atual e com e-mail igual
    produz role `ALUNO`.
+
+O login Google comum iniciado por link de convite usa `requestSignUp: false`, mas
+preserva o token na URL de callback. Após validar `/me`, a tela aceita o convite
+antes de navegar para `/aluno`. Login por e-mail/senha com o mesmo link faz a mesma
+aceitação após confirmar a role canônica. Se o aceite falhar, nenhum dos fluxos
+redireciona para a área do aluno.
 
 Cadastro aberto de personal também é explícito e leva intenção `personal`, sem
 token. Um login Google comum nunca cria conta. Abas concorrentes não compartilham
@@ -135,12 +146,16 @@ Depois que o cadastro do aluno termina:
 O lock e a transacao impedem que duas requisicoes aceitem o mesmo convite ao
 mesmo tempo.
 
+Links recebidos como `/cadastro?token=...` usam `/cadastro` como alias para a tela
+de acesso de aluno; o token é preservado para validação, cadastro ou login e aceite.
+
 ## Arquivos principais
 
 | Arquivo | Responsabilidade |
 |---|---|
 | `src/lib/auth.ts` | Configuracao BetterAuth, tabelas, Google, role e JWT |
 | `src/app/api/auth/[...all]/route.ts` | Endpoints oficiais BetterAuth |
+| `src/app/cadastro/page.tsx` | Alias dos links de convite para o acesso de aluno |
 | `src/app/api/backend/[...path]/route.ts` | Ponte autenticada para NodusAPI |
 | `src/lib/bff/headers.ts` | Lista permitida e reconstrucao de headers |
 | `src/app/api/registration-invites/prepare/route.ts` | Pré-valida convite sem persistir estado no cliente |
