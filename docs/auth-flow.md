@@ -214,9 +214,10 @@ seguem protegidos. Na UI Preview também foram encontrados os nomes
 `GOOGLE_CLIENT_ID` e `GOOGLE_CLIENT_SECRET` para a branch, sem revelar valores nem
 validar se são válidos.
 
-O Preview atualizado foi marcado `READY` pela Vercel no commit
-`f9962a0591b1bd25b59d344e0bacfad95ee6191b`. O alias público continua apontando
-para a última implantação da branch; nenhuma variável de ambiente foi alterada.
+O código do Preview foi marcado `READY` pela Vercel no commit
+`f9962a0591b1bd25b59d344e0bacfad95ee6191b`; a atualização documental seguinte,
+`af374c62fe8896373d5c9de17ec73d799dcaa883`, também ficou `READY` e é a mais
+recente no alias. Nenhuma variável de ambiente foi alterada.
 
 ## Configuracao necessaria
 
