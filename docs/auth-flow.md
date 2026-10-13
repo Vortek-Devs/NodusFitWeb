@@ -189,9 +189,9 @@ nunca Expo `EXPO_PUBLIC_*`. Google Cloud deve autorizar
 `<BETTER_AUTH_URL>/api/auth/callback/google`. `nodusfit://` é o retorno de um build
 instalado; `exp://` e loopback só entram em `trustedOrigins` durante
 `NODE_ENV=development`. Para o Expo Go contra Preview, a variável server-only
-`NODUS_PREVIEW_EXPO_GO_ORIGIN` pode liberar uma origem exata somente quando
+`NODUS_PREVIEW_EXPO_GO_ORIGIN` libera uma origem exata somente quando
 `VERCEL_ENV=preview` e `VERCEL_GIT_COMMIT_REF` aponta para a branch de staging; o
-valor não aceita wildcard, query ou path. Production continua sem `exp://`.
+parser rejeita wildcard, query e path. Production continua sem `exp://`.
 
 ### Acesso ao Preview pelo dispositivo
 
@@ -216,15 +216,16 @@ seguem protegidos. Na UI Preview também foram encontrados os nomes
 `GOOGLE_CLIENT_ID` e `GOOGLE_CLIENT_SECRET` para a branch, sem revelar valores nem
 validar se são válidos.
 
-O código do Preview foi marcado `READY` pela Vercel no commit
-`f9962a0591b1bd25b59d344e0bacfad95ee6191b`. Deploys documentais posteriores
-`af374c62fe8896373d5c9de17ec73d799dcaa883` e
-`f63ef0e868e32ebcdf3aa4acbe322fe9b7d4cc58` também ficaram `READY`; o segundo é o
-mais recente no alias. A variável não secreta
-`NODUS_PREVIEW_EXPO_GO_ORIGIN` foi adicionada somente ao Preview da branch
-`codex/final-pr-preview-2026-09-28`. A nova validação de origem está local, aguardando
-commit/push para que um deploy a consuma; nenhum valor Google, segredo ou env de
+O Preview com a validação de origem foi marcado `READY` pela Vercel no commit
+`30c1c9587ccb9cf89728fb0c98a3a907db7590ed`. A variável não secreta
+`NODUS_PREVIEW_EXPO_GO_ORIGIN` está configurada como Preview, branch
+`codex/final-pr-preview-2026-09-28`; nenhum valor Google, segredo ou env de
 Production foi alterado.
+
+Com Origin `exp://` exato, `POST /api/auth/sign-in/social` respondeu `200` com
+redirect para `accounts.google.com`, sem seguir o redirect nem enviar dados de
+conta. `GET /api/auth/token` respondeu `404`. Isso confirma a fronteira e o início
+do provider, mas não conclui callback, consentimento, sessão Expo ou `/me`.
 
 ## Configuracao necessaria
 
