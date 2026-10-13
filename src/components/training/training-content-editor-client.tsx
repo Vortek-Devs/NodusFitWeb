@@ -12,7 +12,7 @@ import {
 import { useQueries, useQuery, useQueryClient } from "@tanstack/react-query";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
-import { type FormEvent, useId, useRef, useState } from "react";
+import { type FormEvent, useEffect, useId, useRef, useState } from "react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { DEFAULT_EXERCISE_FILTERS } from "@/features/exercises/exercise-query-keys";
@@ -60,6 +60,8 @@ type TrainingEditorKind = "modelo" | "plano";
 interface TrainingContentEditorClientProps {
   kind: TrainingEditorKind;
   resourceId?: string;
+  initialStudentId?: string;
+  publishPending?: boolean;
 }
 
 const inputClass =
@@ -75,6 +77,8 @@ const DEFAULT_EXERCISE_PRESCRIPTION = {
 export function TrainingContentEditorClient({
   kind,
   resourceId,
+  initialStudentId,
+  publishPending = false,
 }: TrainingContentEditorClientProps) {
   const validId = resourceId && isUuid(resourceId) ? resourceId : undefined;
   const [exerciseSearch, setExerciseSearch] = useState("");
@@ -121,6 +125,26 @@ export function TrainingContentEditorClient({
   const exerciseDetails = useQueries({
     queries: unresolvedExerciseIds.map((id) => exerciseDetailQueryOptions(id)),
   });
+  const exerciseDetailsPending = exerciseDetails.some((query) => query.isPending);
+  const [exerciseNamesReady, setExerciseNamesReady] = useState(false);
+  useEffect(() => {
+    if (
+      kind === "modelo" &&
+      resourceId &&
+      template.data &&
+      (exercises.isSuccess || exercises.isError) &&
+      !exerciseDetailsPending
+    ) {
+      setExerciseNamesReady(true);
+    }
+  }, [
+    kind,
+    resourceId,
+    template.data,
+    exercises.isSuccess,
+    exercises.isError,
+    exerciseDetailsPending,
+  ]);
   const exerciseNames = new Map(
     exercises.data?.items.map((exercise) => [exercise.id, exercise.name]) ?? [],
   );
@@ -154,11 +178,7 @@ export function TrainingContentEditorClient({
       />
     );
   }
-  if (
-    resourceId &&
-    kind === "modelo" &&
-    exerciseDetails.some((query) => query.isPending)
-  ) {
+  if (resourceId && kind === "modelo" && !exerciseNamesReady) {
     return <EditorLoading />;
   }
 
@@ -169,6 +189,7 @@ export function TrainingContentEditorClient({
           template.data ? `${template.data.id}:${template.data.version}` : "novo-modelo"
         }
         initial={template.data}
+        publishPending={publishPending}
         exerciseNames={exerciseNames}
         search={exerciseSearch}
         onSearchChange={setExerciseSearch}
@@ -188,6 +209,8 @@ export function TrainingContentEditorClient({
     <TrainingPlanEditor
       key={plan.data ? `${plan.data.id}:${plan.data.version}` : "novo-plano"}
       initial={plan.data}
+      initialStudentId={initialStudentId}
+      publishPending={publishPending}
       templateSearch={templateSearch}
       onTemplateSearchChange={setTemplateSearch}
       templates={publishedTemplates.data?.items ?? []}
@@ -219,6 +242,7 @@ interface TemplateBlockDraft {
 
 function WorkoutTemplateEditor({
   initial,
+  publishPending,
   exerciseNames,
   search,
   onSearchChange,
@@ -232,6 +256,7 @@ function WorkoutTemplateEditor({
   retryExercises,
 }: {
   initial?: WorkoutTemplate;
+  publishPending: boolean;
   exerciseNames: Map<string, string>;
   search: string;
   onSearchChange: (value: string) => void;
@@ -418,7 +443,7 @@ function WorkoutTemplateEditor({
       operationRef.current = null;
       await invalidateTrainingQueries(queryClient, "modelo", saved.id);
       setNotice("Rascunho salvo.");
-      if (navigate) router.replace(`/treinos/${saved.id}?tipo=modelo`);
+      if (navigate) router.replace(trainingDetailHref(saved.id, "modelo"));
       return saved;
     } catch (cause) {
       setError(errorMessage(cause));
@@ -448,9 +473,10 @@ function WorkoutTemplateEditor({
       });
       publishOperationRef.current = null;
       await invalidateTrainingQueries(queryClient, "modelo", published.id);
-      router.replace(`/treinos/${published.id}?tipo=modelo`);
+      router.replace(trainingDetailHref(published.id, "modelo"));
     } catch (cause) {
       setError(errorMessage(cause));
+      router.replace(trainingDetailHref(saved.id, "modelo", undefined, true));
     } finally {
       setBusy(false);
     }
@@ -480,6 +506,11 @@ function WorkoutTemplateEditor({
         publishDisabled={!canPublish || busy}
       />
       {error ? <EditorAlert>{error}</EditorAlert> : null}
+      {publishPending && initial?.status === "DRAFT" ? (
+        <EditorAlert>
+          O rascunho foi salvo, mas não foi possível publicar. Revise e tente novamente.
+        </EditorAlert>
+      ) : null}
       {notice ? <EditorNotice>{notice}</EditorNotice> : null}
 
       <div className="grid items-start gap-4 xl:grid-cols-[16rem_minmax(24rem,1fr)_18rem] 2xl:grid-cols-[18rem_minmax(32rem,1fr)_20rem] 2xl:gap-5">
@@ -905,6 +936,8 @@ interface PlanWorkoutDraft {
 
 function TrainingPlanEditor({
   initial,
+  initialStudentId,
+  publishPending,
   templateSearch,
   onTemplateSearchChange,
   templates,
@@ -913,6 +946,8 @@ function TrainingPlanEditor({
   retryTemplates,
 }: {
   initial?: TrainingPlan;
+  initialStudentId?: string;
+  publishPending: boolean;
   templateSearch: string;
   onTemplateSearchChange: (value: string) => void;
   templates: {
@@ -1079,7 +1114,8 @@ function TrainingPlanEditor({
       operationRef.current = null;
       await invalidateTrainingQueries(queryClient, "plano", saved.id);
       setNotice("Rascunho salvo.");
-      if (navigate) router.replace(`/treinos/${saved.id}?tipo=plano`);
+      if (navigate)
+        router.replace(trainingDetailHref(saved.id, "plano", initialStudentId));
       return saved;
     } catch (cause) {
       setError(errorMessage(cause));
@@ -1109,9 +1145,10 @@ function TrainingPlanEditor({
       });
       publishOperationRef.current = null;
       await invalidateTrainingQueries(queryClient, "plano", published.id);
-      router.replace(`/treinos/${published.id}?tipo=plano`);
+      router.replace(trainingDetailHref(published.id, "plano", initialStudentId));
     } catch (cause) {
       setError(errorMessage(cause));
+      router.replace(trainingDetailHref(saved.id, "plano", initialStudentId, true));
     } finally {
       setBusy(false);
     }
@@ -1122,7 +1159,10 @@ function TrainingPlanEditor({
       <div className="space-y-5">
         <PublishedContent kind="plano" name={initial.name} status={initial.status} />
         {initial.status === "PUBLISHED" && initial.currentPublishedVersionId ? (
-          <WorkoutAssignmentForm planVersionId={initial.currentPublishedVersionId} />
+          <WorkoutAssignmentForm
+            initialStudentId={initialStudentId}
+            planVersionId={initial.currentPublishedVersionId}
+          />
         ) : null}
       </div>
     );
@@ -1148,6 +1188,11 @@ function TrainingPlanEditor({
         publishDisabled={!canPublish || busy}
       />
       {error ? <EditorAlert>{error}</EditorAlert> : null}
+      {publishPending && initial?.status === "DRAFT" ? (
+        <EditorAlert>
+          O rascunho foi salvo, mas não foi possível publicar. Revise e tente novamente.
+        </EditorAlert>
+      ) : null}
       {notice ? <EditorNotice>{notice}</EditorNotice> : null}
 
       <div className="grid items-start gap-4 xl:grid-cols-[17rem_minmax(22rem,1fr)_20rem]">
@@ -1633,9 +1678,27 @@ function PublishedContent({
   );
 }
 
-function WorkoutAssignmentForm({ planVersionId }: { planVersionId: string }) {
+function trainingDetailHref(
+  id: string,
+  kind: TrainingEditorKind,
+  studentId?: string,
+  publishPending = false,
+) {
+  const params = new URLSearchParams({ tipo: kind });
+  if (kind === "plano" && isUuid(studentId)) params.set("studentId", studentId);
+  if (publishPending) params.set("publicacao", "pendente");
+  return `/treinos/${id}?${params.toString()}`;
+}
+
+function WorkoutAssignmentForm({
+  planVersionId,
+  initialStudentId,
+}: {
+  planVersionId: string;
+  initialStudentId?: string;
+}) {
   const [studentSearch, setStudentSearch] = useState("");
-  const [studentId, setStudentId] = useState("");
+  const [studentId, setStudentId] = useState(initialStudentId ?? "");
   const [startsOn, setStartsOn] = useState(localCalendarDate);
   const [endsOn, setEndsOn] = useState("");
   const [error, setError] = useState<string | null>(null);

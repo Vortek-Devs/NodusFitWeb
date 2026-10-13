@@ -59,6 +59,10 @@ describe("student detail", () => {
       "href",
       "/alunos",
     );
+    expect(screen.getByRole("link", { name: "Criar plano de treino" })).toHaveAttribute(
+      "href",
+      `/treinos/novo?tipo=plano&studentId=${id}`,
+    );
   });
   it.each([401, 403, 404, 500])("handles %s safely", async (status) => {
     fetchMock

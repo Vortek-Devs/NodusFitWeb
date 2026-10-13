@@ -38,7 +38,9 @@ export function StudentDetailClient({ studentId }: { studentId: string }) {
               {student.name}
             </h1>
             <Button className="mt-4" asChild>
-              <Link href={`/treinos/novo?studentId=${encodeURIComponent(student.id)}`}>
+              <Link
+                href={`/treinos/novo?tipo=plano&studentId=${encodeURIComponent(student.id)}`}
+              >
                 Criar plano de treino
               </Link>
             </Button>

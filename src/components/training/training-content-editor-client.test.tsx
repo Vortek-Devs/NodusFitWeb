@@ -54,6 +54,7 @@ function renderEditor(
   kind: "modelo" | "plano",
   fetcher: typeof fetch,
   resourceId?: string,
+  initialStudentId?: string,
 ) {
   vi.stubGlobal("fetch", fetcher);
   const queryClient = new QueryClient({
@@ -61,7 +62,11 @@ function renderEditor(
   });
   return render(
     <QueryClientProvider client={queryClient}>
-      <TrainingContentEditorClient kind={kind} resourceId={resourceId} />
+      <TrainingContentEditorClient
+        initialStudentId={initialStudentId}
+        kind={kind}
+        resourceId={resourceId}
+      />
     </QueryClientProvider>,
   );
 }
@@ -113,6 +118,86 @@ describe("versioned training editor", () => {
       "id",
       `suggested-load-${ids.workoutExercise}`,
     );
+  });
+
+  it("keeps an edited draft mounted while search loads a selected exercise detail", async () => {
+    const existingTemplate = {
+      ...templateItem,
+      status: "DRAFT",
+      notes: null,
+      blocks: [
+        {
+          id: ids.block,
+          position: 1,
+          label: null,
+          exercises: [
+            {
+              id: ids.workoutExercise,
+              position: 1,
+              exerciseId: ids.exercise,
+              notes: null,
+              prescription: {
+                id: ids.prescription,
+                sets: 3,
+                repsMin: 8,
+                repsMax: 12,
+                suggestedLoadKg: null,
+                restSeconds: 90,
+              },
+            },
+          ],
+        },
+      ],
+    };
+    let resolveExerciseDetail!: (response: Response) => void;
+    const pendingDetail = new Promise<Response>((resolve) => {
+      resolveExerciseDetail = resolve;
+    });
+    const fetcher = vi.fn<typeof fetch>().mockImplementation(async (input) => {
+      const path = String(input);
+      if (path === `/api/backend/v1/workout-templates/${ids.template}`)
+        return Response.json(existingTemplate);
+      if (path.includes("/exercises/options"))
+        return Response.json({ equipment: [], muscleGroups: [] });
+      if (path.includes("/exercises?")) {
+        return path.includes("search=Supino")
+          ? Response.json({ items: [], page: 1, pageSize: 20, totalCount: 0 })
+          : Response.json({ items: [exercise], page: 1, pageSize: 20, totalCount: 1 });
+      }
+      if (path === `/api/backend/v1/exercises/${ids.exercise}`) return pendingDetail;
+      throw new Error(`Unexpected request: ${path}`);
+    });
+
+    renderEditor("modelo", fetcher, ids.template);
+    const name = await screen.findByLabelText("Nome do treino");
+    const notes = await screen.findByLabelText(
+      "Observações do exercício Agachamento livre",
+    );
+    fireEvent.change(name, { target: { value: "Treino editado" } });
+    fireEvent.change(notes, { target: { value: "Manter controle" } });
+    fireEvent.change(screen.getByLabelText("Buscar exercício"), {
+      target: { value: "Supino" },
+    });
+
+    await waitFor(() =>
+      expect(
+        fetcher.mock.calls.some(
+          ([path]) => String(path) === `/api/backend/v1/exercises/${ids.exercise}`,
+        ),
+      ).toBe(true),
+    );
+    expect(screen.getByLabelText("Nome do treino")).toHaveValue("Treino editado");
+    expect(
+      screen.getByLabelText("Observações do exercício Agachamento livre"),
+    ).toHaveValue("Manter controle");
+
+    resolveExerciseDetail(Response.json(exercise));
+    await waitFor(() =>
+      expect(screen.getByLabelText("Nome do treino")).toBeInTheDocument(),
+    );
+    expect(
+      screen.getByLabelText("Observações do exercício Agachamento livre"),
+    ).toHaveValue("Manter controle");
   });
 
   it("uses persisted plan workout IDs for stable hydrated controls", async () => {
@@ -344,6 +429,49 @@ describe("versioned training editor", () => {
     expect(mockReplace).toHaveBeenCalledWith(`/treinos/${ids.plan}?tipo=plano`);
   });
 
+  it("opens the saved plan when publishing fails instead of leaving a duplicateable new form", async () => {
+    const createdPlan = {
+      ...createdPlanFixture(),
+      name: "Hipertrofia",
+    };
+    const fetcher = vi.fn<typeof fetch>().mockImplementation(async (input, init) => {
+      const path = String(input);
+      if (path.includes("/workout-templates?"))
+        return Response.json({
+          items: [templateItem],
+          page: 1,
+          pageSize: 20,
+          totalCount: 1,
+        });
+      if (path === "/api/backend/v1/training-plans" && init?.method === "POST")
+        return Response.json(createdPlan, { status: 201 });
+      if (path.endsWith(`/training-plans/${ids.plan}/publish`))
+        return Response.json({ code: "PUBLISH_FAILED" }, { status: 503 });
+      throw new Error(`Unexpected request: ${path}`);
+    });
+
+    renderEditor("plano", fetcher);
+    fireEvent.change(await screen.findByLabelText("Nome do plano"), {
+      target: { value: "Hipertrofia" },
+    });
+    fireEvent.change(await screen.findByLabelText("Treino de segunda-feira"), {
+      target: { value: ids.templateVersion },
+    });
+    fireEvent.click(screen.getByRole("button", { name: "Publicar" }));
+
+    await waitFor(() =>
+      expect(mockReplace).toHaveBeenCalledWith(
+        `/treinos/${ids.plan}?tipo=plano&publicacao=pendente`,
+      ),
+    );
+    expect(
+      fetcher.mock.calls.filter(
+        ([path, init]) =>
+          String(path) === "/api/backend/v1/training-plans" && init?.method === "POST",
+      ),
+    ).toHaveLength(1);
+  });
+
   it("keeps the exact historical template version visible in an existing plan", async () => {
     const existingPlan = {
       ...createdPlanFixture(),
@@ -439,13 +567,15 @@ describe("versioned training editor", () => {
     });
     render(
       <QueryClientProvider client={queryClient}>
-        <TrainingContentEditorClient kind="plano" resourceId={ids.plan} />
+        <TrainingContentEditorClient
+          initialStudentId={student.id}
+          kind="plano"
+          resourceId={ids.plan}
+        />
       </QueryClientProvider>,
     );
 
-    fireEvent.change(await screen.findByLabelText("Aluno"), {
-      target: { value: student.id },
-    });
+    expect(await screen.findByLabelText("Aluno")).toHaveValue(student.id);
     fireEvent.change(screen.getByLabelText("Início"), {
       target: { value: "2026-10-01" },
     });
