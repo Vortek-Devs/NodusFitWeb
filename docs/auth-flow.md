@@ -188,8 +188,10 @@ decididos pelo BetterAuth/NodusAPI, não pelo perfil enviado pelo Google.
 nunca Expo `EXPO_PUBLIC_*`. Google Cloud deve autorizar
 `<BETTER_AUTH_URL>/api/auth/callback/google`. `nodusfit://` é o retorno de um build
 instalado; `exp://` e loopback só entram em `trustedOrigins` durante
-`NODE_ENV=development`. Um Preview remoto usado com Expo Go requer allowlist
-específico e verificação operacional antes do teste.
+`NODE_ENV=development`. Para o Expo Go contra Preview, a variável server-only
+`NODUS_PREVIEW_EXPO_GO_ORIGIN` pode liberar uma origem exata somente quando
+`VERCEL_ENV=preview` e `VERCEL_GIT_COMMIT_REF` aponta para a branch de staging; o
+valor não aceita wildcard, query ou path. Production continua sem `exp://`.
 
 ### Acesso ao Preview pelo dispositivo
 
@@ -201,7 +203,7 @@ BetterAuth/BFF. O bypass de automação é segredo servidor e não pode ir no bu
 mobile. O teste de dispositivo requer um hostname de staging acessível publicamente
 (por exceção de proteção restrita a esse hostname ou projeto isolado). Os demais
 deployments devem continuar protegidos. A configuração atual de proteção não foi
-alterada.
+alterada globalmente; somente o hostname citado abaixo tem exceção.
 
 O alias da implantação mais recente da branch, SHA
 `bd98c552129579fecb98f097f01321f4993793d2`, é
@@ -215,9 +217,14 @@ seguem protegidos. Na UI Preview também foram encontrados os nomes
 validar se são válidos.
 
 O código do Preview foi marcado `READY` pela Vercel no commit
-`f9962a0591b1bd25b59d344e0bacfad95ee6191b`; a atualização documental seguinte,
-`af374c62fe8896373d5c9de17ec73d799dcaa883`, também ficou `READY` e é a mais
-recente no alias. Nenhuma variável de ambiente foi alterada.
+`f9962a0591b1bd25b59d344e0bacfad95ee6191b`. Deploys documentais posteriores
+`af374c62fe8896373d5c9de17ec73d799dcaa883` e
+`f63ef0e868e32ebcdf3aa4acbe322fe9b7d4cc58` também ficaram `READY`; o segundo é o
+mais recente no alias. A variável não secreta
+`NODUS_PREVIEW_EXPO_GO_ORIGIN` foi adicionada somente ao Preview da branch
+`codex/final-pr-preview-2026-09-28`. A nova validação de origem está local, aguardando
+commit/push para que um deploy a consuma; nenhum valor Google, segredo ou env de
+Production foi alterado.
 
 ## Configuracao necessaria
 
