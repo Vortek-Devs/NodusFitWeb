@@ -14,6 +14,7 @@ import {
 } from "./auth-result";
 import { buildOAuthSignupState, INVITE_HEADER_NAME } from "./invite-context";
 import {
+  buildStudentGoogleLoginCallback,
   buildStudentLoginCallback,
   buildVerificationCallback,
 } from "./verification-callback";
@@ -75,7 +76,21 @@ export async function studentLogin(
   password: string,
   token?: string,
 ): Promise<AuthResult> {
-  return emailLogin(email, password, buildStudentLoginCallback(token));
+  const result = await emailLogin(email, password, buildStudentLoginCallback(token));
+  if (result.status !== "authenticated" || !token) return result;
+  if (result.user.role !== "aluno")
+    return {
+      status: "error",
+      code: "INVITE_ROLE_MISMATCH",
+      message: "Este convite só pode ser aceito por uma conta de aluno.",
+    };
+
+  const acceptance = await completeVerifiedStudentInvite(token);
+  return acceptance.status === "accepted"
+    ? { ...result, redirectTo: acceptance.redirectTo }
+    : acceptance.status === "error"
+      ? acceptance
+      : unavailable;
 }
 async function emailLogin(
   email: string,
@@ -158,8 +173,8 @@ export async function personalGoogleCompleteProfile(): Promise<AuthResult> {
     message: "Complete os dados obrigatórios do perfil na etapa de onboarding.",
   };
 }
-export async function studentGoogleLogin(): Promise<AuthActionResult> {
-  return startGoogle("/acesso?perfil=aluno");
+export async function studentGoogleLogin(token?: string): Promise<AuthActionResult> {
+  return startGoogle(buildStudentGoogleLoginCallback(token));
 }
 export async function studentGoogleRegister(
   invite: InviteValidation,

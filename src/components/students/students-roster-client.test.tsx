@@ -300,6 +300,38 @@ describe("students roster", () => {
       ),
     });
   });
+  it("locks the invite email while the request is pending", async () => {
+    const pending = deferred();
+    fetchMock.mockResolvedValueOnce(page([])).mockReturnValueOnce(pending.promise);
+    renderRoster();
+    await screen.findByText("Nenhum aluno vinculado");
+
+    fireEvent.click(screen.getByRole("button", { name: "Convidar aluno" }));
+    fireEvent.change(screen.getByRole("textbox", { name: "E-mail do aluno" }), {
+      target: { value: "aluno@nodus.test" },
+    });
+    fireEvent.click(screen.getByRole("button", { name: "Gerar convite" }));
+
+    const email = screen.getByRole("textbox", { name: "E-mail do aluno" });
+    await waitFor(() => expect(fetchMock).toHaveBeenCalledTimes(2));
+    expect(email).toBeDisabled();
+
+    await act(async () => {
+      pending.resolve(
+        Response.json(
+          {
+            id,
+            link: "https://app.example.test/cadastro?token=opaque-invite-token",
+            expiresAt: "2026-10-20T12:00:00Z",
+          },
+          { status: 201 },
+        ),
+      );
+    });
+    expect(await screen.findByRole("status")).toHaveTextContent(
+      "Convite criado para aluno@nodus.test.",
+    );
+  });
   it("retries safe errors with code and correlation", async () => {
     fetchMock.mockResolvedValueOnce(problem(500)).mockResolvedValueOnce(page());
     renderRoster();

@@ -8,6 +8,12 @@ export function buildStudentLoginCallback(token?: string) {
   return buildVerificationCallback("aluno", token);
 }
 
+export function buildStudentGoogleLoginCallback(token?: string) {
+  const params = new URLSearchParams({ perfil: "aluno" });
+  if (token && INVITE_TOKEN_PATTERN.test(token)) params.set("token", token);
+  return `/acesso?${params.toString()}`;
+}
+
 export function buildVerificationCallback(role: "personal" | "aluno", token?: string) {
   const params = new URLSearchParams({ perfil: role });
   if (role === "aluno") {

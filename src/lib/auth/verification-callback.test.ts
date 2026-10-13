@@ -1,5 +1,6 @@
 import { describe, expect, it } from "vitest";
 import {
+  buildStudentGoogleLoginCallback,
   buildStudentLoginCallback,
   buildVerificationCallback,
 } from "./verification-callback";
@@ -20,6 +21,10 @@ describe("verification callback", () => {
   it("retains a valid invite token for student login", () =>
     expect(buildStudentLoginCallback("Abc_123-xyz")).toBe(
       "/acesso?perfil=aluno&token=Abc_123-xyz&emailVerificado=1",
+    ));
+  it("retains valid invite for Google login without marking it as email verification", () =>
+    expect(buildStudentGoogleLoginCallback("Abc_123-xyz")).toBe(
+      "/acesso?perfil=aluno&token=Abc_123-xyz",
     ));
   it.each([
     undefined,

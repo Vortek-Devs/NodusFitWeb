@@ -9,6 +9,7 @@ import {
   resolveAuthenticatedAccess,
   studentGoogleLogin,
   studentGoogleRegister,
+  studentLogin,
   studentRegister,
 } from "./access-actions";
 import { INVITE_HEADER_NAME } from "./invite-context";
@@ -43,6 +44,76 @@ describe("email actions", () => {
     expect(fetchMock.mock.calls.map(([url]) => url)).toEqual([
       "/api/registration-invites/accept",
     ]);
+  });
+  it("accepts a valid invite after email login before redirecting", async () => {
+    client.signIn.email.mockResolvedValue({ data: { user: { id: "student-1" } } });
+    fetchMock
+      .mockResolvedValueOnce(
+        Response.json({
+          user: {
+            userId: "student-1",
+            email: "student@example.com",
+            name: "Student",
+            role: "ALUNO",
+            emailVerified: true,
+            isActive: true,
+            isBanned: false,
+            personalProfileId: null,
+            studentProfileId: "40000000-0000-4000-8000-000000000002",
+          },
+          personalProfile: null,
+          studentProfile: {
+            id: "40000000-0000-4000-8000-000000000002",
+            personalProfileId: "40000000-0000-4000-8000-000000000003",
+            status: "ACTIVE",
+            telefone: null,
+            birthDate: null,
+          },
+          onboarding: { required: false, missingFields: [] },
+        }),
+      )
+      .mockResolvedValueOnce(Response.json({ accepted: true }));
+
+    await expect(
+      studentLogin("student@example.com", "Password1", "Abc_123-xyz"),
+    ).resolves.toMatchObject({ status: "authenticated", redirectTo: "/aluno" });
+    expect(fetchMock.mock.calls.map(([url]) => url)).toEqual([
+      "/api/backend/me",
+      "/api/registration-invites/accept",
+    ]);
+  });
+  it("does not redirect after email login when invite acceptance fails", async () => {
+    client.signIn.email.mockResolvedValue({ data: { user: { id: "student-1" } } });
+    fetchMock
+      .mockResolvedValueOnce(
+        Response.json({
+          user: {
+            userId: "student-1",
+            email: "student@example.com",
+            name: "Student",
+            role: "ALUNO",
+            emailVerified: true,
+            isActive: true,
+            isBanned: false,
+            personalProfileId: null,
+            studentProfileId: "40000000-0000-4000-8000-000000000002",
+          },
+          personalProfile: null,
+          studentProfile: {
+            id: "40000000-0000-4000-8000-000000000002",
+            personalProfileId: "40000000-0000-4000-8000-000000000003",
+            status: "ACTIVE",
+            telefone: null,
+            birthDate: null,
+          },
+          onboarding: { required: false, missingFields: [] },
+        }),
+      )
+      .mockResolvedValueOnce(Response.json({ code: "INVITE_INVALID" }, { status: 410 }));
+
+    await expect(
+      studentLogin("student@example.com", "Password1", "Abc_123-xyz"),
+    ).resolves.toMatchObject({ status: "error", code: "INVITE_INVALID" });
   });
   it("cancels a stale identity before starting authenticated acceptance", async () => {
     await expect(completeVerifiedStudentInvite("Abc_123", () => false)).resolves.toEqual({
@@ -137,9 +208,11 @@ describe("email actions", () => {
     fetchMock.mockResolvedValue(new Response(null, { status: 200 }));
 
     await personalGoogleLogin();
-    await studentGoogleLogin();
+    await studentGoogleLogin("Abc_123-xyz");
     await personalGoogleStart();
-    await studentGoogleRegister({ status: "valid" }, "Abc_123-xyz");
+    await expect(
+      studentGoogleRegister({ status: "valid" }, "Abc_123-xyz"),
+    ).resolves.toMatchObject({ status: "redirecting" });
 
     expect(client.signIn.social).toHaveBeenNthCalledWith(1, {
       provider: "google",
@@ -148,7 +221,7 @@ describe("email actions", () => {
     });
     expect(client.signIn.social).toHaveBeenNthCalledWith(2, {
       provider: "google",
-      callbackURL: "/acesso?perfil=aluno",
+      callbackURL: "/acesso?perfil=aluno&token=Abc_123-xyz",
       requestSignUp: false,
     });
     expect(client.signIn.social).toHaveBeenNthCalledWith(3, {

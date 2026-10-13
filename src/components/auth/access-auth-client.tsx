@@ -318,7 +318,7 @@ export function AccessAuthClient({
   }
 
   async function submitStudentGoogleLogin() {
-    await submit("student-google-login", () => studentGoogleLogin());
+    await submit("student-google-login", () => studentGoogleLogin(token));
   }
 
   async function submitStudentGoogleRegister() {

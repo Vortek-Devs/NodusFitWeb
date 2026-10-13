@@ -95,7 +95,10 @@ export function StudentsRosterClient() {
   const [inviteError, setInviteError] = useState("");
   const [inviteCopyError, setInviteCopyError] = useState("");
   const [inviteCopied, setInviteCopied] = useState(false);
-  const [inviteResult, setInviteResult] = useState<CreatedInvite | null>(null);
+  const [inviteResult, setInviteResult] = useState<{
+    invite: CreatedInvite;
+    email: string;
+  } | null>(null);
   const inviteOperation = useRef<{ email: string; id: string } | null>(null);
   const filters = normalizeStudentListFilter(params);
   const query = useQuery({
@@ -135,7 +138,7 @@ export function StudentsRosterClient() {
         email,
         operationId: inviteOperation.current.id,
       });
-      setInviteResult(result);
+      setInviteResult({ invite: result, email });
       inviteOperation.current = null;
     } catch {
       setInviteError(
@@ -149,7 +152,7 @@ export function StudentsRosterClient() {
   async function copyInviteLink() {
     if (!inviteResult) return;
     try {
-      await navigator.clipboard.writeText(inviteResult.link);
+      await navigator.clipboard.writeText(inviteResult.invite.link);
       setInviteCopied(true);
       setInviteCopyError("");
     } catch {
@@ -215,6 +218,7 @@ export function StudentsRosterClient() {
               </label>
               <Input
                 autoComplete="off"
+                disabled={invitePending}
                 id="student-invite-email"
                 maxLength={254}
                 onChange={(event) => {
@@ -244,10 +248,11 @@ export function StudentsRosterClient() {
           {inviteResult ? (
             <div className="mt-4 border-t border-border pt-4">
               <p className="text-sm font-semibold text-ink-primary" role="status">
-                Convite criado para {inviteEmail.trim().toLowerCase()}.
+                Convite criado para {inviteResult.email}.
               </p>
               <p className="mt-1 text-sm text-ink-secondary">
-                Expira em {new Date(inviteResult.expiresAt).toLocaleString("pt-BR")}.
+                Expira em{" "}
+                {new Date(inviteResult.invite.expiresAt).toLocaleString("pt-BR")}.
               </p>
               <label
                 className="mb-1 mt-3 block text-sm font-semibold text-ink-primary"
@@ -260,7 +265,7 @@ export function StudentsRosterClient() {
                   className="min-w-0"
                   id="student-invite-link"
                   readOnly
-                  value={inviteResult.link}
+                  value={inviteResult.invite.link}
                 />
                 <Button
                   onClick={() => void copyInviteLink()}
@@ -281,7 +286,7 @@ export function StudentsRosterClient() {
                   "mt-3 inline-flex min-h-11 items-center rounded-md px-3 text-sm font-semibold text-ink-brand underline underline-offset-4",
                   focus,
                 )}
-                href={inviteResult.link}
+                href={inviteResult.invite.link}
                 rel="noopener noreferrer"
                 target="_blank"
               >
