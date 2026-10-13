@@ -50,6 +50,32 @@ comprovar entrega exige domínio verificado, segredos reais e validação runtim
 
 ## Desenvolvimento e validação
 
+### Seed de demonstração local
+
+Com o Supabase local `supabase_db_NodusAPI` ativo e as migrations aplicadas,
+execute na pasta deste repositório. Ajuste a porta da URL à que o Docker publicou
+para esse container (`54322` ou `55322`):
+
+```powershell
+$env:NODUS_LOCAL_DEMO_SEED = '1'
+$env:DATABASE_URL = 'postgresql://postgres:postgres@127.0.0.1:55322/postgres'
+node scripts/seed-local-demo.mjs seed
+```
+
+O script recusa hosts, portas, bancos e containers diferentes; verifica se o seed
+está vazio ou completo, cria backup antes de gravar e é repetível. As credenciais
+aleatórias ficam em `LOCAL_DEMO_CREDENTIALS.md` na raiz do workspace Nodus, fora
+dos repositórios Git, com acesso restrito à máquina local. O seed contém contas
+`.test`, três alunos e seis exercícios fictícios; não cria treinos nem envia e-mail.
+Confirme login e listas locais com `node scripts/smoke-local-demo.mjs`.
+
+Para conferir a remoção sem alterar dados, rode
+`node scripts/seed-local-demo.mjs rollback-check`. O rollback real só é permitido
+se não houver convites, operações ou dados dependentes e cria outro backup antes
+de remover o seed. O teste puro de segurança do script roda com
+`node --test scripts/seed-local-demo.check.mjs`; nenhum desses comandos grava no
+banco durante a suíte normal do projeto.
+
 ```powershell
 npm run dev -- --port 3010
 ```
