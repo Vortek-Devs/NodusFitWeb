@@ -44,6 +44,7 @@ it("keeps mobile sessions cookie-bound while retaining the internal BFF JWT", ()
   expect(options.plugins?.map((plugin) => plugin.id)).toEqual(["expo", "jwt"]);
   expect(bearerPlugin).not.toHaveBeenCalled();
   expect(jwtPlugin).toHaveBeenCalledTimes(1);
+  expect(options.disabledPaths).toContain("/token");
 });
 
 it("disables implicit Google signup so login cannot create a new role", () => {

@@ -9,9 +9,9 @@ export function getTrustedOrigins({
 }: TrustedOriginsConfig = {}): string[] {
   const origins = [mobileScheme ?? "nodusfit://"];
 
-  // Localhost aliases are needed for dev previews, never for deployed auth.
+  // Local web and Expo Go origins are needed in development only.
   if (nodeEnv === "development") {
-    origins.push("http://localhost:*", "http://127.0.0.1:*");
+    origins.push("http://localhost:*", "http://127.0.0.1:*", "exp://", "exp://**");
   }
 
   return origins;

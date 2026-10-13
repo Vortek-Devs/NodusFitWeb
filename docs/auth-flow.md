@@ -22,10 +22,18 @@ A configuracao BetterAuth nao inclui o plugin `bearer`: a sessao recebida do cli
 e exclusivamente por cookie. O plugin `jwt()` permanece apenas para emitir a
 credencial interna usada pelo BFF ao chamar a NodusAPI.
 
-Para manter essa fronteira, BetterAuth desabilita o endpoint público `/token`, e a
-rota HTTP `/api/auth/*` remove `set-auth-jwt` de todas as respostas ao browser. O
-BFF chama `auth.api.getSession` diretamente no servidor e continua lendo o header
-interno; o filtro só cobre respostas HTTP públicas.
+Para manter essa fronteira, BetterAuth desabilita o endpoint público `/token` e a
+rota HTTP Next.js responde `404` para `/api/auth/token` antes de encaminhar a
+requisição. A rota HTTP `/api/auth/*` também remove `set-auth-jwt` de todas as
+respostas ao browser. O BFF chama `auth.api.getSession` diretamente no servidor e
+continua lendo o header interno; o bloqueio e o filtro só cobrem respostas HTTP
+públicas.
+
+Isso evita entregar ao JavaScript do browser um bearer reutilizável para chamadas
+diretas à API. Se esse JWT vazar, ele pode continuar válido até expirar mesmo que a
+sessão por cookie seja encerrada. Por isso, o plugin `jwt()` não é removido: só o
+BFF server-side pode obter a credencial de serviço, e o browser recebe apenas o
+cookie BetterAuth.
 
 ## Login por e-mail ou Google
 
@@ -78,11 +86,11 @@ browser envie `role: "ADMIN"` ou `role: "ALUNO"`, o campo BetterAuth possui
 8. Somente convite `ALUNO` válido, vinculado ao fluxo atual e com e-mail igual
    produz role `ALUNO`.
 
-O login Google comum iniciado por link de convite usa `requestSignUp: false`, mas
-preserva o token na URL de callback. Após validar `/me`, a tela aceita o convite
-antes de navegar para `/aluno`. Login por e-mail/senha com o mesmo link faz a mesma
-aceitação após confirmar a role canônica. Se o aceite falhar, nenhum dos fluxos
-redireciona para a área do aluno.
+No web, o login Google comum iniciado por link de convite usa
+`requestSignUp: false`, mas preserva o token na URL de callback. Após validar
+`/me`, a tela aceita o convite antes de navegar para `/aluno`. Login por
+e-mail/senha com o mesmo link faz a mesma aceitação após confirmar a role canônica.
+Se o aceite falhar, nenhum dos fluxos redireciona para a área do aluno.
 
 Cadastro aberto de personal também é explícito e leva intenção `personal`, sem
 token. Um login Google comum nunca cria conta. Abas concorrentes não compartilham
@@ -161,6 +169,50 @@ de acesso de aluno; o token é preservado para validação, cadastro ou login e 
 | `src/app/api/registration-invites/prepare/route.ts` | Pré-valida convite sem persistir estado no cliente |
 | `src/app/api/registration-invites/accept/route.ts` | Consome convite apos autenticar |
 | `src/lib/contracts/nodus-api.ts` | Contratos tipados usados pelo frontend |
+
+## Login Google pelo app Expo
+
+O app usa `@better-auth/expo/client` e `expo-web-browser` para abrir o fluxo
+BetterAuth no navegador e retornar por deep link. O cliente envia
+`signIn.social({ provider: "google", callbackURL: "/", requestSignUp: false })`;
+o Expo plugin converte o callback relativo em `Linking.createURL`. Sessão/cookie
+fica no SecureStore do app. O app consulta `/api/mobile/backend/me` com esse
+cookie; só o BFF cria o JWT de domínio para NodusAPI.
+
+Esse botão é login, não signup Google mobile. O Google provider do BetterAuth já
+desabilita cadastro implícito; convites de novos alunos continuam pelo cadastro
+explícito de e-mail. Conta e role canônicas, elegibilidade, vínculo e perfil são
+decididos pelo BetterAuth/NodusAPI, não pelo perfil enviado pelo Google.
+
+`GOOGLE_CLIENT_ID` e `GOOGLE_CLIENT_SECRET` são variáveis server-only do Next/BFF,
+nunca Expo `EXPO_PUBLIC_*`. Google Cloud deve autorizar
+`<BETTER_AUTH_URL>/api/auth/callback/google`. `nodusfit://` é o retorno de um build
+instalado; `exp://` e loopback só entram em `trustedOrigins` durante
+`NODE_ENV=development`. Um Preview remoto usado com Expo Go requer allowlist
+específico e verificação operacional antes do teste.
+
+### Acesso ao Preview pelo dispositivo
+
+No retrato do projeto Vercel em 13/10/2026, Vercel Authentication/SSO está
+habilitado para deployments que não sejam custom domains, e não há domínio
+customizado de staging listado. O app Expo não herda a sessão de SSO do navegador;
+assim, a proteção pode bloquear `/api/auth/*` e `/api/mobile/backend/*` antes do
+BetterAuth/BFF. O bypass de automação é segredo servidor e não pode ir no bundle
+mobile. O teste de dispositivo requer um hostname de staging acessível publicamente
+(por exceção de proteção restrita a esse hostname ou projeto isolado). Os demais
+deployments devem continuar protegidos. A configuração atual de proteção não foi
+alterada.
+
+O alias da implantação mais recente da branch, SHA
+`bd98c552129579fecb98f097f01321f4993793d2`, é
+`nodusfit-git-codex-final-pr-3f6c16-jeferson-mesquitas-projects.vercel.app`.
+Foi escolhida uma exceção só para esse hostname; a Vercel avisa que deploys atuais
+e futuros nele ficarão públicos até remover a exceção. Após confirmação explícita,
+a exceção foi aplicada e o hostname aparece em **Unprotected Domains**. A rota
+`/acesso` abriu publicamente no navegador interno. SSO global e outros Previews
+seguem protegidos. Na UI Preview também foram encontrados os nomes
+`GOOGLE_CLIENT_ID` e `GOOGLE_CLIENT_SECRET` para a branch, sem revelar valores nem
+validar se são válidos.
 
 ## Configuracao necessaria
 
