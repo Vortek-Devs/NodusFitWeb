@@ -3,6 +3,7 @@
 import {
   IconChevronLeft,
   IconChevronRight,
+  IconCopy,
   IconSearch,
   IconUsers,
 } from "@tabler/icons-react";
@@ -18,7 +19,7 @@ import {
 } from "@tanstack/react-table";
 import Link from "next/link";
 import { usePathname, useRouter, useSearchParams } from "next/navigation";
-import { useLayoutEffect, useRef, useState } from "react";
+import { type FormEvent, useLayoutEffect, useRef, useState } from "react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import {
@@ -37,9 +38,11 @@ import {
   studentFiltersToSearchParams,
   studentQueryKeys,
 } from "@/features/students/student-query-keys";
-import { listStudents } from "@/features/students/students-api";
+import { createStudentInvite, listStudents } from "@/features/students/students-api";
 import { useMountEffect } from "@/hooks/use-mount-effect";
+import type { CreatedInvite } from "@/lib/contracts/nodus-api";
 import type { StudentListFilter, StudentListItem } from "@/lib/contracts/students";
+import { cn } from "@/lib/utils";
 import { StudentLoading, StudentQueryError } from "./student-query-state";
 import { StudentStatusBadge } from "./student-status-badge";
 
@@ -48,6 +51,8 @@ const features = tableFeatures({
   rowPaginationFeature,
   rowSortingFeature,
 });
+const focus =
+  "focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-brand-400";
 const EMPTY_STUDENTS: StudentListItem[] = [];
 const columns: ColumnDef<typeof features, StudentListItem>[] = [
   { accessorKey: "name", header: "Aluno" },
@@ -84,6 +89,14 @@ export function StudentsRosterClient() {
   const params = useSearchParams();
   const router = useRouter();
   const pathname = usePathname();
+  const [inviteFormOpen, setInviteFormOpen] = useState(false);
+  const [inviteEmail, setInviteEmail] = useState("");
+  const [invitePending, setInvitePending] = useState(false);
+  const [inviteError, setInviteError] = useState("");
+  const [inviteCopyError, setInviteCopyError] = useState("");
+  const [inviteCopied, setInviteCopied] = useState(false);
+  const [inviteResult, setInviteResult] = useState<CreatedInvite | null>(null);
+  const inviteOperation = useRef<{ email: string; id: string } | null>(null);
   const filters = normalizeStudentListFilter(params);
   const query = useQuery({
     queryKey: studentQueryKeys.list(filters),
@@ -104,6 +117,47 @@ export function StudentsRosterClient() {
       sorting: [{ id: filters.sortBy, desc: filters.sortDirection === "desc" }],
     },
   });
+
+  async function submitInvite(event: FormEvent<HTMLFormElement>) {
+    event.preventDefault();
+    const email = inviteEmail.trim().toLowerCase();
+    if (!email) return;
+
+    if (!inviteOperation.current || inviteOperation.current.email !== email) {
+      inviteOperation.current = { email, id: crypto.randomUUID() };
+    }
+    setInvitePending(true);
+    setInviteError("");
+    setInviteCopyError("");
+    setInviteCopied(false);
+    try {
+      const result = await createStudentInvite({
+        email,
+        operationId: inviteOperation.current.id,
+      });
+      setInviteResult(result);
+      inviteOperation.current = null;
+    } catch {
+      setInviteError(
+        "Não foi possível gerar o convite. Confira o e-mail e tente novamente.",
+      );
+    } finally {
+      setInvitePending(false);
+    }
+  }
+
+  async function copyInviteLink() {
+    if (!inviteResult) return;
+    try {
+      await navigator.clipboard.writeText(inviteResult.link);
+      setInviteCopied(true);
+      setInviteCopyError("");
+    } catch {
+      setInviteCopied(false);
+      setInviteCopyError("Não foi possível copiar. Selecione o link para copiá-lo.");
+    }
+  }
+
   function update(patch: Partial<StudentListFilter>) {
     const next = studentFiltersToSearchParams(
       normalizeStudentListFilter({ ...filters, ...patch }),
@@ -113,20 +167,130 @@ export function StudentsRosterClient() {
   const data = query.data;
   return (
     <div className="space-y-5">
-      <header className="border-b border-border pb-5">
-        <p className="text-sm font-semibold text-ink-brand">Gestão do personal</p>
-        <h1 className="mt-1 flex items-center gap-2 text-3xl font-bold text-ink-primary">
-          <IconUsers aria-hidden="true" size={28} />
-          Alunos
-        </h1>
-        <p className="mt-2 text-sm text-ink-secondary">
-          {data && !query.isError
-            ? query.isPlaceholderData
-              ? "Atualizando vínculos…"
-              : `${data.totalCount} vínculos encontrados`
-            : "Consulte seus alunos vinculados."}
-        </p>
+      <header className="flex flex-wrap items-start justify-between gap-4 border-b border-border pb-5">
+        <div>
+          <p className="text-sm font-semibold text-ink-brand">Gestão do personal</p>
+          <h1 className="mt-1 flex items-center gap-2 text-3xl font-bold text-ink-primary">
+            <IconUsers aria-hidden="true" size={28} />
+            Alunos
+          </h1>
+          <p className="mt-2 text-sm text-ink-secondary">
+            {data && !query.isError
+              ? query.isPlaceholderData
+                ? "Atualizando vínculos…"
+                : `${data.totalCount} vínculos encontrados`
+              : "Consulte seus alunos vinculados."}
+          </p>
+        </div>
+        <Button
+          onClick={() => setInviteFormOpen((open) => !open)}
+          type="button"
+          variant={inviteFormOpen ? "outline" : "default"}
+        >
+          {inviteFormOpen ? "Fechar convite" : "Convidar aluno"}
+        </Button>
       </header>
+      {inviteFormOpen ? (
+        <section
+          aria-labelledby="student-invite-title"
+          className="rounded-xl border border-border bg-surface p-4 sm:p-5"
+        >
+          <h2 className="font-bold text-ink-primary" id="student-invite-title">
+            Convite para aluno
+          </h2>
+          <p className="mt-1 text-sm text-ink-secondary">
+            Gere um link individual para o aluno criar a conta e se vincular ao seu
+            espaço.
+          </p>
+          <form
+            className="mt-4 grid gap-3 sm:grid-cols-[minmax(0,1fr)_auto] sm:items-end"
+            onSubmit={(event) => void submitInvite(event)}
+          >
+            <div>
+              <label
+                className="mb-1 block text-sm font-semibold text-ink-primary"
+                htmlFor="student-invite-email"
+              >
+                E-mail do aluno
+              </label>
+              <Input
+                autoComplete="off"
+                id="student-invite-email"
+                maxLength={254}
+                onChange={(event) => {
+                  const value = event.target.value;
+                  if (inviteOperation.current?.email !== value.trim().toLowerCase())
+                    inviteOperation.current = null;
+                  setInviteEmail(value);
+                  setInviteResult(null);
+                  setInviteError("");
+                  setInviteCopyError("");
+                  setInviteCopied(false);
+                }}
+                required
+                type="email"
+                value={inviteEmail}
+              />
+            </div>
+            <Button disabled={invitePending} type="submit">
+              {invitePending ? "Gerando convite…" : "Gerar convite"}
+            </Button>
+          </form>
+          {inviteError ? (
+            <p className="mt-3 text-sm text-danger-text" role="alert">
+              {inviteError}
+            </p>
+          ) : null}
+          {inviteResult ? (
+            <div className="mt-4 border-t border-border pt-4">
+              <p className="text-sm font-semibold text-ink-primary" role="status">
+                Convite criado para {inviteEmail.trim().toLowerCase()}.
+              </p>
+              <p className="mt-1 text-sm text-ink-secondary">
+                Expira em {new Date(inviteResult.expiresAt).toLocaleString("pt-BR")}.
+              </p>
+              <label
+                className="mb-1 mt-3 block text-sm font-semibold text-ink-primary"
+                htmlFor="student-invite-link"
+              >
+                Link do convite
+              </label>
+              <div className="flex flex-col gap-2 sm:flex-row">
+                <Input
+                  className="min-w-0"
+                  id="student-invite-link"
+                  readOnly
+                  value={inviteResult.link}
+                />
+                <Button
+                  onClick={() => void copyInviteLink()}
+                  type="button"
+                  variant="outline"
+                >
+                  <IconCopy aria-hidden="true" size={17} />
+                  {inviteCopied ? "Copiado" : "Copiar link"}
+                </Button>
+              </div>
+              {inviteCopyError ? (
+                <p className="mt-2 text-sm text-danger-text" role="alert">
+                  {inviteCopyError}
+                </p>
+              ) : null}
+              <a
+                className={cn(
+                  "mt-3 inline-flex min-h-11 items-center rounded-md px-3 text-sm font-semibold text-ink-brand underline underline-offset-4",
+                  focus,
+                )}
+                href={inviteResult.link}
+                rel="noopener noreferrer"
+                target="_blank"
+              >
+                Abrir convite
+              </a>
+            </div>
+          ) : null}
+        </section>
+      ) : null}
       <FilterEditor filters={filters} update={update} />
       {query.isPending ? (
         <StudentLoading />

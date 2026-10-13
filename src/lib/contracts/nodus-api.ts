@@ -2,6 +2,7 @@ import {
   isCalendarDate,
   isRecord,
   isStudentStatus,
+  isTimestamp,
   isUuid,
   type StudentStatus,
 } from "./students";
@@ -93,4 +94,34 @@ export interface CreatedInvite {
   id: string;
   link: string;
   expiresAt: string;
+}
+
+export interface CreateInviteRequest {
+  email: string;
+  operationId: string;
+}
+
+export function isCreatedInvite(value: unknown): value is CreatedInvite {
+  if (
+    !isRecord(value) ||
+    !isUuid(value.id) ||
+    !isTimestamp(value.expiresAt) ||
+    typeof value.link !== "string"
+  ) {
+    return false;
+  }
+
+  try {
+    const link = new URL(value.link);
+    return (
+      ["http:", "https:"].includes(link.protocol) &&
+      !link.username &&
+      !link.password &&
+      link.pathname === "/cadastro" &&
+      link.searchParams.has("token") &&
+      !link.hash
+    );
+  } catch {
+    return false;
+  }
 }

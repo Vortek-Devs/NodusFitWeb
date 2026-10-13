@@ -1,5 +1,5 @@
 import { afterEach, describe, expect, it, vi } from "vitest";
-import { isMeResponse } from "@/lib/contracts/nodus-api";
+import { isCreatedInvite, isMeResponse } from "@/lib/contracts/nodus-api";
 import { isPagedStudents, isStudentDetail } from "@/lib/contracts/students";
 import {
   DEFAULT_STUDENT_FILTERS,
@@ -8,7 +8,7 @@ import {
   studentFiltersToSearchParams,
   studentQueryKeys,
 } from "./student-query-keys";
-import { getStudent, listStudents } from "./students-api";
+import { createStudentInvite, getStudent, listStudents } from "./students-api";
 
 const id = "16a7ab81-68dd-47ee-9600-d7c860121093";
 const item = {
@@ -19,6 +19,11 @@ const item = {
   linkedAt: "2026-09-07T12:34:56.1234567+00:00",
 };
 const page = { items: [item], page: 1, pageSize: 20, totalCount: 1 };
+const createdInvite = {
+  id: "21111111-1111-4111-8111-111111111111",
+  link: "https://app.example.test/cadastro?token=opaque-invite-token",
+  expiresAt: "2026-10-20T12:00:00Z",
+};
 const me = {
   user: {
     userId: "better-auth-user",
@@ -90,6 +95,39 @@ describe("student requests", () => {
       code: "INVALID_API_RESPONSE",
     });
   });
+
+  it("creates an invite through the authenticated BFF with the idempotency key", async () => {
+    const fetcher = vi
+      .fn()
+      .mockResolvedValue(Response.json(createdInvite, { status: 201 }));
+    vi.stubGlobal("fetch", fetcher);
+    const input = {
+      email: "aluno@example.test",
+      operationId: "31111111-1111-4111-8111-111111111111",
+    };
+
+    await expect(createStudentInvite(input)).resolves.toEqual(createdInvite);
+    expect(fetcher).toHaveBeenCalledOnce();
+    expect(fetcher.mock.calls[0][0]).toBe("/api/backend/v1/invites");
+    const request = fetcher.mock.calls[0][1];
+    expect(request).toMatchObject({ method: "POST", credentials: "include" });
+    expect(new Headers(request.headers).get("content-type")).toBe("application/json");
+    expect(new Headers(request.headers).get("accept")).toBe("application/json");
+    expect(JSON.parse(request.body)).toEqual(input);
+  });
+
+  it("rejects invite responses that do not point to the registration route", async () => {
+    const fetcher = vi
+      .fn()
+      .mockResolvedValue(
+        Response.json({ ...createdInvite, link: "javascript:alert(1)" }, { status: 201 }),
+      );
+    vi.stubGlobal("fetch", fetcher);
+
+    await expect(
+      createStudentInvite({ email: "aluno@example.test", operationId: id }),
+    ).rejects.toMatchObject({ code: "INVALID_API_RESPONSE" });
+  });
 });
 
 describe("filters and query keys", () => {
@@ -154,6 +192,12 @@ describe("runtime contracts", () => {
         },
       }),
     ).toBe(true);
+  });
+  it("accepts only well-formed student invitation responses", () => {
+    expect(isCreatedInvite(createdInvite)).toBe(true);
+    expect(
+      isCreatedInvite({ ...createdInvite, link: "https://app.example.test/cadastro" }),
+    ).toBe(false);
   });
   it.each([
     { page: 2147483648 },

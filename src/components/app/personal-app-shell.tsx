@@ -4,21 +4,25 @@ import {
   IconBarbell,
   IconCalendar,
   IconChartBar,
+  IconChevronDown,
   IconHelpCircle,
   IconHome,
   IconLayoutDashboard,
+  IconLogout,
   IconMessageCircle,
   IconPlus,
   IconReceipt,
   IconSettings,
   IconTopologyStar3,
+  IconUserCircle,
   IconUsers,
 } from "@tabler/icons-react";
 import Link from "next/link";
-import { usePathname } from "next/navigation";
-import type { ComponentType, ReactNode } from "react";
+import { usePathname, useRouter } from "next/navigation";
+import { type ComponentType, type ReactNode, useRef, useState } from "react";
 import { Button } from "@/components/ui/button";
 import type { AuthenticatedPersonal } from "@/lib/auth/personal-access";
+import { authClient } from "@/lib/auth-client";
 import { cn } from "@/lib/utils";
 
 interface IconProps {
@@ -82,10 +86,31 @@ export function PersonalAppShell({
   todayLabel,
 }: PersonalAppShellProps) {
   const pathname = usePathname();
+  const router = useRouter();
+  const accountMenuRef = useRef<HTMLDetailsElement>(null);
+  const [signingOut, setSigningOut] = useState(false);
+  const [signOutError, setSignOutError] = useState("");
   const pageTitle = getPageTitle(pathname);
   const isInicio = pathname === "/inicio";
   const isExercises = pathname === "/exercicios";
   const isTrainingPlans = pathname === "/treinos";
+
+  async function signOut() {
+    setSigningOut(true);
+    setSignOutError("");
+    try {
+      const { error } = await authClient.signOut();
+      if (error) {
+        setSignOutError("Não foi possível sair. Tente novamente.");
+        return;
+      }
+      router.replace("/acesso");
+    } catch {
+      setSignOutError("Não foi possível sair. Tente novamente.");
+    } finally {
+      setSigningOut(false);
+    }
+  }
 
   return (
     <div className="min-h-dvh bg-page text-ink-primary">
@@ -160,22 +185,6 @@ export function PersonalAppShell({
                   {todayLabel}
                 </span>
               ) : null}
-              <div className="hidden min-w-0 items-center gap-2 border-l border-border pl-3 md:flex">
-                <span
-                  aria-hidden="true"
-                  className="grid size-9 shrink-0 place-items-center rounded-full border border-brand-400/25 bg-brand-400/10 text-xs font-bold text-ink-brand"
-                >
-                  {getInitials(identity.name)}
-                </span>
-                <span className="min-w-0">
-                  <span className="block max-w-40 truncate text-sm font-semibold">
-                    {identity.name}
-                  </span>
-                  <span className="block max-w-40 truncate text-xs text-ink-secondary">
-                    {identity.email}
-                  </span>
-                </span>
-              </div>
               {isInicio ? (
                 <Button asChild className="min-h-11 shrink-0 px-3 sm:px-4">
                   <Link href="/alunos">
@@ -200,26 +209,70 @@ export function PersonalAppShell({
                   </Link>
                 </Button>
               ) : null}
+              <details ref={accountMenuRef} className="group relative shrink-0">
+                <summary
+                  aria-label={`Menu da conta de ${identity.name}`}
+                  className={cn(
+                    "flex min-h-11 max-w-[min(64vw,20rem)] list-none cursor-pointer items-center gap-2 rounded-lg border border-border bg-page px-2 py-1 text-left hover:bg-hover [&::-webkit-details-marker]:hidden",
+                    focus,
+                  )}
+                >
+                  <span
+                    aria-hidden="true"
+                    className="grid size-9 shrink-0 place-items-center rounded-full border border-brand-400/25 bg-brand-400/10 text-xs font-bold text-ink-brand"
+                  >
+                    {getInitials(identity.name)}
+                  </span>
+                  <span className="hidden min-w-0 md:block">
+                    <span className="block max-w-40 truncate text-sm font-semibold">
+                      {identity.name}
+                    </span>
+                    <span className="block max-w-40 truncate text-xs text-ink-secondary">
+                      {identity.email}
+                    </span>
+                  </span>
+                  <IconChevronDown aria-hidden="true" className="shrink-0" size={16} />
+                </summary>
+                <div className="absolute right-0 top-full z-30 mt-2 w-64 max-w-[calc(100vw-2rem)] rounded-xl border border-border bg-surface p-2 shadow-lg">
+                  <div className="border-b border-border px-3 pb-2">
+                    <p className="text-xs font-semibold text-ink-secondary">
+                      Conta do personal
+                    </p>
+                    <p className="mt-1 truncate text-sm font-semibold text-ink-primary">
+                      {identity.name}
+                    </p>
+                    <p className="truncate text-xs text-ink-secondary">
+                      {identity.email}
+                    </p>
+                  </div>
+                  <Link
+                    className={cn(
+                      "flex min-h-11 items-center gap-2 rounded-md px-3 text-sm font-semibold text-ink-primary hover:bg-hover",
+                      focus,
+                    )}
+                    href="/perfil"
+                    onClick={() => accountMenuRef.current?.removeAttribute("open")}
+                  >
+                    <IconUserCircle aria-hidden="true" size={18} />
+                    Ver perfil
+                  </Link>
+                  <Button
+                    className="w-full justify-start text-danger-text hover:bg-danger-bg"
+                    disabled={signingOut}
+                    onClick={() => void signOut()}
+                    variant="ghost"
+                  >
+                    <IconLogout aria-hidden="true" size={18} />
+                    {signingOut ? "Saindo…" : "Sair"}
+                  </Button>
+                  {signOutError ? (
+                    <p className="px-3 pb-2 text-sm text-danger-text" role="alert">
+                      {signOutError}
+                    </p>
+                  ) : null}
+                </div>
+              </details>
             </div>
-          </div>
-          <div
-            className="mt-3 flex min-w-0 items-center gap-2 border-t border-border-muted pt-3 md:hidden"
-            data-testid="mobile-identity"
-          >
-            <span
-              aria-hidden="true"
-              className="grid size-8 shrink-0 place-items-center rounded-full border border-brand-400/25 bg-brand-400/10 text-[10px] font-bold text-ink-brand"
-            >
-              {getInitials(identity.name)}
-            </span>
-            <span className="min-w-0">
-              <span className="block truncate text-xs font-semibold">
-                {identity.name}
-              </span>
-              <span className="block truncate text-xs text-ink-secondary">
-                {identity.email}
-              </span>
-            </span>
           </div>
         </header>
 
@@ -324,6 +377,7 @@ function isRouteActive(pathname: string, href: string) {
 function getPageTitle(pathname: string) {
   if (pathname === "/inicio") return "Início";
   if (pathname === "/dashboard") return "Dashboard";
+  if (pathname === "/perfil") return "Meu perfil";
   if (pathname === "/alunos" || pathname.startsWith("/alunos/")) return "Alunos";
   if (pathname === "/exercicios" || pathname.startsWith("/exercicios/")) {
     return "Exercícios";

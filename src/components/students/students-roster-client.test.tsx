@@ -265,6 +265,41 @@ describe("students roster", () => {
         screen.queryByRole("button", { name: "Limpar filtros" }),
       ).not.toBeInTheDocument();
   });
+  it("creates a student invitation and exposes the validated registration link", async () => {
+    const invite = {
+      id,
+      link: "https://app.example.test/cadastro?token=opaque-invite-token",
+      expiresAt: "2026-10-20T12:00:00Z",
+    };
+    fetchMock
+      .mockResolvedValueOnce(page([]))
+      .mockResolvedValueOnce(Response.json(invite, { status: 201 }));
+    renderRoster();
+    await screen.findByText("Nenhum aluno vinculado");
+
+    fireEvent.click(screen.getByRole("button", { name: "Convidar aluno" }));
+    fireEvent.change(screen.getByRole("textbox", { name: "E-mail do aluno" }), {
+      target: { value: " Aluno@Nodus.test " },
+    });
+    fireEvent.click(screen.getByRole("button", { name: "Gerar convite" }));
+
+    expect(await screen.findByRole("link", { name: "Abrir convite" })).toHaveAttribute(
+      "href",
+      invite.link,
+    );
+    expect(screen.getByRole("status")).toHaveTextContent(
+      "Convite criado para aluno@nodus.test.",
+    );
+    const [path, request] = fetchMock.mock.calls[1];
+    expect(path).toBe("/api/backend/v1/invites");
+    expect(request?.method).toBe("POST");
+    expect(JSON.parse(String(request?.body))).toMatchObject({
+      email: "aluno@nodus.test",
+      operationId: expect.stringMatching(
+        /^[0-9a-f]{8}-[0-9a-f]{4}-4[0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i,
+      ),
+    });
+  });
   it("retries safe errors with code and correlation", async () => {
     fetchMock.mockResolvedValueOnce(problem(500)).mockResolvedValueOnce(page());
     renderRoster();

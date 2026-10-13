@@ -1,4 +1,5 @@
 import { nodusApiRequest } from "@/lib/api/nodus-api-client";
+import { type CreateInviteRequest, isCreatedInvite } from "@/lib/contracts/nodus-api";
 import {
   isPagedStudents,
   isStudentDetail,
@@ -21,4 +22,12 @@ export function getStudent(studentId: string, signal?: AbortSignal) {
     isStudentDetail,
     { signal },
   );
+}
+
+export function createStudentInvite(input: CreateInviteRequest) {
+  return nodusApiRequest("v1/invites", isCreatedInvite, {
+    method: "POST",
+    headers: { "content-type": "application/json" },
+    body: JSON.stringify(input),
+  });
 }

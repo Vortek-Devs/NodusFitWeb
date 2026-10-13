@@ -1,10 +1,25 @@
 // @vitest-environment jsdom
-import { cleanup, render, screen, within } from "@testing-library/react";
+import {
+  cleanup,
+  fireEvent,
+  render,
+  screen,
+  waitFor,
+  within,
+} from "@testing-library/react";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import { PersonalAppShell } from "./personal-app-shell";
 
-const { pathname } = vi.hoisted(() => ({ pathname: vi.fn() }));
-vi.mock("next/navigation", () => ({ usePathname: pathname }));
+const { pathname, replace, signOut } = vi.hoisted(() => ({
+  pathname: vi.fn(),
+  replace: vi.fn(),
+  signOut: vi.fn(),
+}));
+vi.mock("next/navigation", () => ({
+  usePathname: pathname,
+  useRouter: () => ({ replace }),
+}));
+vi.mock("@/lib/auth-client", () => ({ authClient: { signOut } }));
 const identity = {
   userId: "canonical-user",
   name: "Personal canônico",
@@ -14,7 +29,11 @@ const identity = {
 };
 describe("PersonalAppShell", () => {
   afterEach(cleanup);
-  beforeEach(() => pathname.mockReturnValue("/alunos"));
+  beforeEach(() => {
+    pathname.mockReturnValue("/alunos");
+    replace.mockReset();
+    signOut.mockReset().mockResolvedValue({ error: null });
+  });
 
   it.each([
     "/alunos",
@@ -126,9 +145,9 @@ describe("PersonalAppShell", () => {
       within(banner).getByText("sexta-feira, 25 de setembro de 2026"),
     ).toBeInTheDocument();
     expect(within(banner).getAllByText(identity.name)).toHaveLength(2);
-    const mobileIdentity = screen.getByTestId("mobile-identity");
-    expect(within(mobileIdentity).getByText(identity.name)).toBeInTheDocument();
-    expect(within(mobileIdentity).getByText(identity.email)).toBeInTheDocument();
+    expect(
+      within(banner).getByLabelText(`Menu da conta de ${identity.name}`),
+    ).toBeInTheDocument();
     expect(
       within(banner).queryByRole("link", { name: "Cadastrar exercício" }),
     ).toBeNull();
@@ -216,5 +235,33 @@ describe("PersonalAppShell", () => {
       "href",
       "/treinos/novo",
     );
+  });
+
+  it("opens the account menu with a profile link and signs out through Better Auth", async () => {
+    render(<PersonalAppShell identity={identity}>Alunos</PersonalAppShell>);
+
+    fireEvent.click(screen.getByLabelText(`Menu da conta de ${identity.name}`));
+    expect(screen.getByRole("link", { name: "Ver perfil" })).toHaveAttribute(
+      "href",
+      "/perfil",
+    );
+    fireEvent.click(screen.getByRole("button", { name: "Sair" }));
+
+    await waitFor(() => expect(signOut).toHaveBeenCalledOnce());
+    expect(replace).toHaveBeenCalledWith("/acesso");
+  });
+
+  it("keeps the account menu open and reports a safe message when sign-out fails", async () => {
+    signOut.mockResolvedValueOnce({ error: { message: "sensitive upstream detail" } });
+    render(<PersonalAppShell identity={identity}>Alunos</PersonalAppShell>);
+
+    fireEvent.click(screen.getByLabelText(`Menu da conta de ${identity.name}`));
+    fireEvent.click(screen.getByRole("button", { name: "Sair" }));
+
+    expect(await screen.findByRole("alert")).toHaveTextContent(
+      "Não foi possível sair. Tente novamente.",
+    );
+    expect(screen.queryByText("sensitive upstream detail")).toBeNull();
+    expect(replace).not.toHaveBeenCalled();
   });
 });
