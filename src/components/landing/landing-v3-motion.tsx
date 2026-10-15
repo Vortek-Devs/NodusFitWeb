@@ -9,14 +9,18 @@ export function LandingV3Motion() {
       return;
     }
 
-    const reduceMotion = window.matchMedia("(prefers-reduced-motion: reduce)").matches;
+    const reduceMotion =
+      window.matchMedia?.("(prefers-reduced-motion: reduce)").matches ?? false;
 
-    if (reduceMotion) {
+    if (reduceMotion || typeof IntersectionObserver === "undefined") {
+      root.classList.add("motion-ready");
       root.querySelectorAll("[data-r], .chat-msg").forEach((element) => {
         element.classList.add("in");
       });
       return;
     }
+
+    root.classList.add("motion-ready");
 
     const revealObserver = new IntersectionObserver(
       (entries) => {

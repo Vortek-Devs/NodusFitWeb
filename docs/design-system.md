@@ -10,6 +10,10 @@ Estes arquivos em `C:\Users\je_27\Downloads` guiam a base visual do projeto:
 
 Como este projeto usa Tailwind CSS v4, os tokens foram traduzidos para `src/app/globals.css` com `@theme inline`, em vez de depender de um `tailwind.config.ts`.
 
+Os arquivos em `Downloads` são referências históricas. Para handoff atual de IA, use `docs/design.md` como fonte de identidade/produto e `docs/motion-graphics-brief.md` como roteiro. Não usar a antiga referência de landing como fonte de copy ou capacidades atuais.
+
+A logo original está em `public/brand/nodus-fit-logo.png`. Preserve o arquivo; não redesenhar a marca.
+
 ## Direcao visual
 
 - Marca principal: `brand-400` / `#3DD9A4`.
