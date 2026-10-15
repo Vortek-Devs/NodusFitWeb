@@ -236,3 +236,9 @@ Consulte `.env.example`. Em producao:
 - `BETTER_AUTH_URL` deve ser a URL publica exata do frontend.
 - `NODUS_API_URL` deve apontar para a API C#.
 - As credenciais Google devem usar o callback BetterAuth do ambiente.
+
+## APK mobile de demonstração no Preview — 15/10/2026
+
+O bundle do APK aponta `EXPO_PUBLIC_AUTH_BASE_URL` e `EXPO_PUBLIC_MOBILE_BFF_URL` ao hostname público de staging; mobile envia o cookie BetterAuth ao BFF. Ele não deve chamar a API Render diretamente nem receber seu JWT. A configuração de servidor `NODUS_API_URL` deve seguir apontando à NodusAPI de staging.
+
+Reachability verificada: Preview atual da branch está `READY`; sem sessão, `GET /api/auth/get-session` respondeu 200 e `GET /api/mobile/backend/me` respondeu 401. A API staging respondeu 200 em `/health`. Esses resultados não comprovam uma chamada autenticada do BFF à API. Nesta checagem, a listagem das envs Vercel retornou 403, então o valor ativo de `NODUS_API_URL` não foi relido; não afirmar integração autenticada como validada até executar login e `/me` no aparelho.
